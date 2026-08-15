@@ -1,0 +1,21 @@
+### ==========================================
+### ADMIN CATEGORIES
+### ==========================================
+
+### List
+
+GET http://localhost:8000/api/admin/categories
+Accept: application/json
+
+
+### Create
+
+POST http://localhost:8000/api/admin/categories
+Accept: application/json
+Content-Type: application/json
+
+{
+    "name": "AI Tools",
+    "slug": "ai-tools-2",
+    "description": "Artificial intelligence tools and software."
+}

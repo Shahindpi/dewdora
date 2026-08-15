@@ -1,8 +1,12 @@
 <?php
 
-use App\Http\Controllers\Api\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\Admin\PostController;
+use App\Http\Controllers\Api\Admin\CategoryController;
+use App\Http\Controllers\Api\Admin\TagController;
+use App\Http\Controllers\Api\Admin\AffiliateProductController;
 
 /*
 |--------------------------------------------------------------------------
@@ -69,6 +73,44 @@ Route::middleware('auth:sanctum')->group(function () {
                 ]);
 
             });
+
+            /*
+            |--------------------------------------------------------------------------
+            | Posts
+            |--------------------------------------------------------------------------
+            */
+
+            Route::put('/posts/{post}/tags', [PostController::class, 'syncTags']);
+            
+            Route::put('/posts/{post}/affiliate-products', [PostController::class, 'syncAffiliateProducts']);
+
+            Route::apiResource('posts', PostController::class);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Categories
+            |--------------------------------------------------------------------------
+            */
+
+            Route::apiResource('categories', CategoryController::class);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Tags
+            |--------------------------------------------------------------------------
+            */
+
+            Route::apiResource('tags', TagController::class);
+            
+
+            /*
+            |--------------------------------------------------------------------------
+            | Affiliate Products
+            |--------------------------------------------------------------------------
+            */
+
+            Route::apiResource('affiliate-products', AffiliateProductController::class);
+
 
         });
 

@@ -11,6 +11,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
+use App\Models\Category;
+use App\Models\User;
+use App\Models\Tag;
+use App\Models\AffiliateProduct;
+use App\Models\SeoMeta;
+
 class Post extends Model
 {
     use HasFactory, SoftDeletes;
@@ -51,6 +57,11 @@ class Post extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function tags(): BelongsToMany
