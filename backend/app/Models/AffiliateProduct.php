@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class AffiliateProduct extends Model
 {
@@ -77,4 +78,13 @@ class AffiliateProduct extends Model
             'is_primary',
         ]);
     }
+
+    public function seoMeta(): MorphOne
+    {
+        return $this->morphOne(
+            SeoMeta::class,
+            'seoable'
+        );
+    }
+
 }

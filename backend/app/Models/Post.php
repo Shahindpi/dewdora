@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Post extends Model
 {
@@ -67,4 +68,13 @@ class Post extends Model
             'is_primary',
         ])->orderByPivot('sort_order');
     }
+
+    public function seoMeta(): MorphOne
+    {
+        return $this->morphOne(
+            SeoMeta::class,
+            'seoable'
+        );
+    }
+
 }

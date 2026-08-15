@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Category extends Model
 {
@@ -49,4 +50,13 @@ class Category extends Model
     {
         return $this->hasMany(AffiliateProduct::class);
     }
+
+    public function seoMeta(): MorphOne
+    {
+        return $this->morphOne(
+            SeoMeta::class,
+            'seoable'
+        );
+    }
+
 }

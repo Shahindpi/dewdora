@@ -11,6 +11,8 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use App\Models\Role;
+
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -78,4 +80,10 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function media(): HasMany
+    {
+        return $this->hasMany(Media::class);
+    }
+
 }
