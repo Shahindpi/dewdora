@@ -9,6 +9,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
+use App\Http\Requests\StorePostRequest;
+use App\Http\Requests\UpdatePostRequest;
+use App\Services\CacheService;
+
+
+
+
+
 class PostController extends Controller
 {
     /**
@@ -91,72 +99,9 @@ class PostController extends Controller
     /**
      * Store a newly created post.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StorePostRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'category_id' => [
-                'nullable',
-                'integer',
-                'exists:categories,id',
-            ],
-
-            'title' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-
-            'slug' => [
-                'nullable',
-                'string',
-                'max:280',
-                'unique:posts,slug',
-            ],
-
-            'excerpt' => [
-                'nullable',
-                'string',
-            ],
-
-            'content' => [
-                'required',
-                'string',
-            ],
-
-            'featured_image' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-
-            'post_type' => [
-                'nullable',
-                'string',
-                'max:30',
-            ],
-
-            'status' => [
-                'nullable',
-                'string',
-                'max:30',
-            ],
-
-            'published_at' => [
-                'nullable',
-                'date',
-            ],
-
-            'reading_time' => [
-                'nullable',
-                'integer',
-                'min:1',
-            ],
-
-            'allow_comments' => [
-                'nullable',
-                'boolean',
-            ],
-        ]);
+        $validated = $request->validated();
 
         /*
         |--------------------------------------------------------------------------
@@ -211,6 +156,15 @@ class PostController extends Controller
             'category',
             'user',
         ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Clear Cache
+        |--------------------------------------------------------------------------
+        */
+
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         return response()->json([
             'success' => true,
@@ -351,77 +305,11 @@ class PostController extends Controller
      * Update the specified post.
      */
     public function update(
-        Request $request,
+        UpdatePostRequest $request,
         Post $post
     ): JsonResponse {
 
-        $validated = $request->validate([
-            'category_id' => [
-                'nullable',
-                'integer',
-                'exists:categories,id',
-            ],
-
-            'title' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:255',
-            ],
-
-            'slug' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:280',
-                'unique:posts,slug,' . $post->id,
-            ],
-
-            'excerpt' => [
-                'nullable',
-                'string',
-            ],
-
-            'content' => [
-                'sometimes',
-                'required',
-                'string',
-            ],
-
-            'featured_image' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-
-            'post_type' => [
-                'nullable',
-                'string',
-                'max:30',
-            ],
-
-            'status' => [
-                'nullable',
-                'string',
-                'max:30',
-            ],
-
-            'published_at' => [
-                'nullable',
-                'date',
-            ],
-
-            'reading_time' => [
-                'nullable',
-                'integer',
-                'min:1',
-            ],
-
-            'allow_comments' => [
-                'nullable',
-                'boolean',
-            ],
-        ]);
+        $validated = $request->validated();
 
         /*
         |--------------------------------------------------------------------------
@@ -458,6 +346,16 @@ class PostController extends Controller
             'user',
         ]);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Clear Cache
+        |--------------------------------------------------------------------------
+        */
+
+        CacheService::clearPost($post->slug);
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
+
         return response()->json([
             'success' => true,
             'message' => 'Post updated successfully.',
@@ -466,12 +364,20 @@ class PostController extends Controller
     }
 
 
-    /**
-     * Remove the specified post.
-     */
     public function destroy(Post $post): JsonResponse
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Clear Cache Before Delete
+        |--------------------------------------------------------------------------
+        */
+
+        CacheService::clearPost($post->slug);
+
         $post->delete();
+
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         return response()->json([
             'success' => true,

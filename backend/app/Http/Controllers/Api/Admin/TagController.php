@@ -8,6 +8,14 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
+
+
+use App\Http\Requests\UpdateTagRequest;
+use App\Http\Requests\StoreTagRequest;
+use App\Services\CacheService;
+
+
+
 class TagController extends Controller
 {
     /**
@@ -42,28 +50,37 @@ class TagController extends Controller
     /**
      * Create tag.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreTagRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:100',
-            ],
+        $validated = $request->validated();
 
-            'slug' => [
-                'nullable',
-                'string',
-                'max:120',
-                'unique:tags,slug',
-            ],
-        ]);
+        /*
+        |--------------------------------------------------------------------------
+        | Generate Slug
+        |--------------------------------------------------------------------------
+        */
 
         $validated['slug'] =
             $validated['slug']
             ?? Str::slug($validated['name']);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Create Tag
+        |--------------------------------------------------------------------------
+        */
+
         $tag = Tag::create($validated);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Clear Cache
+        |--------------------------------------------------------------------------
+        */
+
+        CacheService::clearTag($tag->slug);
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         return response()->json([
             'success' => true,
@@ -71,7 +88,6 @@ class TagController extends Controller
             'data' => $tag,
         ], 201);
     }
-
 
     /**
      * Show tag.
@@ -91,26 +107,31 @@ class TagController extends Controller
      * Update tag.
      */
     public function update(
-        Request $request,
+        UpdateTagRequest $request,
         Tag $tag
     ): JsonResponse {
 
-        $validated = $request->validate([
-            'name' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:100',
-            ],
+        /*
+        |--------------------------------------------------------------------------
+        | Store Previous Slug
+        |--------------------------------------------------------------------------
+        */
 
-            'slug' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:120',
-                'unique:tags,slug,' . $tag->id,
-            ],
-        ]);
+        $oldSlug = $tag->slug;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Request
+        |--------------------------------------------------------------------------
+        */
+
+        $validated = $request->validated();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Generate Slug
+        |--------------------------------------------------------------------------
+        */
 
         if (
             isset($validated['name']) &&
@@ -120,12 +141,38 @@ class TagController extends Controller
                 Str::slug($validated['name']);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Update Tag
+        |--------------------------------------------------------------------------
+        */
+
         $tag->update($validated);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Refresh Model
+        |--------------------------------------------------------------------------
+        */
+
+        $tag->refresh();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Clear Cache
+        |--------------------------------------------------------------------------
+        */
+
+        CacheService::clearTag($oldSlug);
+        CacheService::clearTag($tag->slug);
+
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         return response()->json([
             'success' => true,
             'message' => 'Tag updated successfully.',
-            'data' => $tag->fresh(),
+            'data' => $tag,
         ]);
     }
 
@@ -135,7 +182,18 @@ class TagController extends Controller
      */
     public function destroy(Tag $tag): JsonResponse
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Clear Cache Before Delete
+        |--------------------------------------------------------------------------
+        */
+
+        CacheService::clearTag($tag->slug);
+
         $tag->delete();
+
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         return response()->json([
             'success' => true,

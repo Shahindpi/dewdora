@@ -8,6 +8,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
+use App\Http\Requests\StoreAffiliateProductRequest;
+use App\Http\Requests\UpdateAffiliateProductRequest;
+use App\Services\CacheService;
+
+
+
 class AffiliateProductController extends Controller
 {
     /**
@@ -111,119 +117,11 @@ class AffiliateProductController extends Controller
     /**
      * Create affiliate product.
      */
-    public function store(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'brand_id' => [
-                'nullable',
-                'integer',
-                'exists:brands,id',
-            ],
+    public function store(
+        StoreAffiliateProductRequest $request
+    ): JsonResponse {
 
-            'affiliate_network_id' => [
-                'nullable',
-                'integer',
-                'exists:affiliate_networks,id',
-            ],
-
-            'category_id' => [
-                'nullable',
-                'integer',
-                'exists:categories,id',
-            ],
-
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-
-            'slug' => [
-                'nullable',
-                'string',
-                'max:255',
-                'unique:affiliate_products,slug',
-            ],
-
-            'short_description' => [
-                'nullable',
-                'string',
-            ],
-
-            'description' => [
-                'nullable',
-                'string',
-            ],
-
-            'website_url' => [
-                'nullable',
-                'url',
-                'max:2048',
-            ],
-
-            'affiliate_url' => [
-                'required',
-                'url',
-                'max:2048',
-            ],
-
-            'price' => [
-                'nullable',
-                'numeric',
-                'min:0',
-            ],
-
-            'currency' => [
-                'nullable',
-                'string',
-                'max:10',
-            ],
-
-            'commission_rate' => [
-                'nullable',
-                'numeric',
-                'min:0',
-                'max:100',
-            ],
-
-            'free_trial' => [
-                'nullable',
-                'boolean',
-            ],
-
-            'rating' => [
-                'nullable',
-                'numeric',
-                'min:0',
-                'max:5',
-            ],
-
-            'featured_image' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-
-            'pros' => [
-                'nullable',
-                'array',
-            ],
-
-            'cons' => [
-                'nullable',
-                'array',
-            ],
-
-            'featured' => [
-                'nullable',
-                'boolean',
-            ],
-
-            'status' => [
-                'nullable',
-                'boolean',
-            ],
-        ]);
+        $validated = $request->validated();
 
         /*
         |--------------------------------------------------------------------------
@@ -255,17 +153,15 @@ class AffiliateProductController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Create
+        | Create Product
         |--------------------------------------------------------------------------
         */
 
-        $product = AffiliateProduct::create(
-            $validated
-        );
+        $product = AffiliateProduct::create($validated);
 
         /*
         |--------------------------------------------------------------------------
-        | Load relationships
+        | Load Relationships
         |--------------------------------------------------------------------------
         */
 
@@ -274,6 +170,16 @@ class AffiliateProductController extends Controller
             'affiliateNetwork',
             'category',
         ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Clear Cache
+        |--------------------------------------------------------------------------
+        */
+
+        CacheService::clearProduct($product->slug);
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         return response()->json([
             'success' => true,
@@ -309,129 +215,29 @@ class AffiliateProductController extends Controller
      * Update affiliate product.
      */
     public function update(
-        Request $request,
+        UpdateAffiliateProductRequest $request,
         AffiliateProduct $affiliateProduct
     ): JsonResponse {
 
-        $validated = $request->validate([
-            'brand_id' => [
-                'nullable',
-                'integer',
-                'exists:brands,id',
-            ],
+        /*
+        |--------------------------------------------------------------------------
+        | Store Previous Slug
+        |--------------------------------------------------------------------------
+        */
 
-            'affiliate_network_id' => [
-                'nullable',
-                'integer',
-                'exists:affiliate_networks,id',
-            ],
-
-            'category_id' => [
-                'nullable',
-                'integer',
-                'exists:categories,id',
-            ],
-
-            'name' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:255',
-            ],
-
-            'slug' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:255',
-                'unique:affiliate_products,slug,'
-                    . $affiliateProduct->id,
-            ],
-
-            'short_description' => [
-                'nullable',
-                'string',
-            ],
-
-            'description' => [
-                'nullable',
-                'string',
-            ],
-
-            'website_url' => [
-                'nullable',
-                'url',
-                'max:2048',
-            ],
-
-            'affiliate_url' => [
-                'sometimes',
-                'required',
-                'url',
-                'max:2048',
-            ],
-
-            'price' => [
-                'nullable',
-                'numeric',
-                'min:0',
-            ],
-
-            'currency' => [
-                'nullable',
-                'string',
-                'max:10',
-            ],
-
-            'commission_rate' => [
-                'nullable',
-                'numeric',
-                'min:0',
-                'max:100',
-            ],
-
-            'free_trial' => [
-                'nullable',
-                'boolean',
-            ],
-
-            'rating' => [
-                'nullable',
-                'numeric',
-                'min:0',
-                'max:5',
-            ],
-
-            'featured_image' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-
-            'pros' => [
-                'nullable',
-                'array',
-            ],
-
-            'cons' => [
-                'nullable',
-                'array',
-            ],
-
-            'featured' => [
-                'nullable',
-                'boolean',
-            ],
-
-            'status' => [
-                'nullable',
-                'boolean',
-            ],
-        ]);
+        $oldSlug = $affiliateProduct->slug;
 
         /*
         |--------------------------------------------------------------------------
-        | Slug
+        | Validate Request
+        |--------------------------------------------------------------------------
+        */
+
+        $validated = $request->validated();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Generate Slug
         |--------------------------------------------------------------------------
         */
 
@@ -443,9 +249,19 @@ class AffiliateProductController extends Controller
                 Str::slug($validated['name']);
         }
 
-        $affiliateProduct->update(
-            $validated
-        );
+        /*
+        |--------------------------------------------------------------------------
+        | Update Product
+        |--------------------------------------------------------------------------
+        */
+
+        $affiliateProduct->update($validated);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Refresh Model
+        |--------------------------------------------------------------------------
+        */
 
         $affiliateProduct->refresh();
 
@@ -455,13 +271,24 @@ class AffiliateProductController extends Controller
             'category',
         ]);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Clear Cache
+        |--------------------------------------------------------------------------
+        */
+
+        CacheService::clearProduct($oldSlug);
+        CacheService::clearProduct($affiliateProduct->slug);
+
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
+
         return response()->json([
             'success' => true,
             'message' => 'Affiliate product updated successfully.',
             'data' => $affiliateProduct,
         ]);
     }
-
 
     /**
      * Delete affiliate product.
@@ -470,7 +297,18 @@ class AffiliateProductController extends Controller
         AffiliateProduct $affiliateProduct
     ): JsonResponse {
 
+        /*
+        |--------------------------------------------------------------------------
+        | Clear Cache Before Delete
+        |--------------------------------------------------------------------------
+        */
+
+        CacheService::clearProduct($affiliateProduct->slug);
+
         $affiliateProduct->delete();
+
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         return response()->json([
             'success' => true,

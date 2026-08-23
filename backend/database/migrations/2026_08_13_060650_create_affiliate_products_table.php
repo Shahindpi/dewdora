@@ -11,10 +11,17 @@ return new class extends Migration
         Schema::create('affiliate_products', function (Blueprint $table) {
             $table->id();
 
+            /*
+            |--------------------------------------------------------------------------
+            | Relationships
+            |--------------------------------------------------------------------------
+            */
+
             $table->foreignId('brand_id')
+                ->nullable()
                 ->constrained('brands')
-                ->cascadeOnUpdate()
-                ->restrictOnDelete();
+                ->nullOnDelete()
+                ->cascadeOnUpdate();
 
             $table->foreignId('affiliate_network_id')
                 ->nullable()
@@ -27,6 +34,12 @@ return new class extends Migration
                 ->constrained('categories')
                 ->nullOnDelete()
                 ->cascadeOnUpdate();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Basic Information
+            |--------------------------------------------------------------------------
+            */
 
             $table->string('name', 200);
 
@@ -46,6 +59,12 @@ return new class extends Migration
              */
             $table->text('affiliate_url');
 
+            /*
+            |--------------------------------------------------------------------------
+            | Pricing
+            |--------------------------------------------------------------------------
+            */
+
             $table->decimal('price', 12, 2)->nullable();
 
             $table->string('currency', 3)->default('USD');
@@ -58,6 +77,12 @@ return new class extends Migration
              */
             $table->decimal('commission_rate', 5, 2)->nullable();
 
+            /*
+            |--------------------------------------------------------------------------
+            | Product Features
+            |--------------------------------------------------------------------------
+            */
+
             $table->boolean('free_trial')->default(false);
 
             $table->unsignedTinyInteger('rating')->nullable();
@@ -68,6 +93,12 @@ return new class extends Migration
 
             $table->json('cons')->nullable();
 
+            /*
+            |--------------------------------------------------------------------------
+            | Status
+            |--------------------------------------------------------------------------
+            */
+
             $table->boolean('featured')->default(false);
 
             $table->boolean('status')->default(true);
@@ -75,6 +106,12 @@ return new class extends Migration
             $table->timestamps();
 
             $table->softDeletes();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Indexes
+            |--------------------------------------------------------------------------
+            */
 
             $table->unique('slug');
 

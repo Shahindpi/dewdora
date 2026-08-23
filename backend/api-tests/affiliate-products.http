@@ -55,7 +55,7 @@ Accept: application/json
 Content-Type: application/json
 
 {
-    "rating": 4.9,
+    "rating": 4.8,
     "featured": true
 }
 

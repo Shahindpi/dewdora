@@ -17,6 +17,7 @@ Content-Type: application/json
 ### Get Me
 GET http://localhost:8000/api/me
 
+
 ### Logout
 POST http://localhost:8000/api/logout
 

@@ -33,3 +33,30 @@ Content-Type: application/json
         2
     ]
 }
+
+
+### ==========================================
+### PUBLIC TAGS
+### ==========================================
+
+### List tags
+
+GET http://localhost:8000/api/public/tags
+Accept: application/json
+
+
+### ==========================================
+### TAG DETAILS
+### ==========================================
+
+### Replace ai with your actual slug
+
+GET http://localhost:8000/api/public/tags/artificial-intelligence
+Accept: application/json
+
+### ==========================================
+### TAG DETAILS
+### ==========================================
+
+GET http://localhost:8000/api/public/tags/ai
+Accept: application/json

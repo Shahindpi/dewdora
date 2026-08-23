@@ -8,6 +8,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
+use App\Http\Requests\UpdateCategoryRequest;
+use App\Http\Requests\StoreCategoryRequest;
+use App\Services\CacheService;
+
+
 class CategoryController extends Controller
 {
     /**
@@ -42,33 +47,25 @@ class CategoryController extends Controller
     /**
      * Create category.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreCategoryRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-
-            'slug' => [
-                'nullable',
-                'string',
-                'max:255',
-                'unique:categories,slug',
-            ],
-
-            'description' => [
-                'nullable',
-                'string',
-            ],
-        ]);
+        $validated = $request->validated();
 
         $validated['slug'] =
             $validated['slug']
             ?? Str::slug($validated['name']);
 
         $category = Category::create($validated);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Clear Cache
+        |--------------------------------------------------------------------------
+        */
+
+        CacheService::clearCategory($category->slug);
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         return response()->json([
             'success' => true,
@@ -96,53 +93,85 @@ class CategoryController extends Controller
      * Update category.
      */
     public function update(
-        Request $request,
+        UpdateCategoryRequest $request,
         Category $category
     ): JsonResponse {
 
-        $validated = $request->validate([
-            'name' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:255',
-            ],
+        /*
+        |--------------------------------------------------------------------------
+        | Store Previous Slug
+        |--------------------------------------------------------------------------
+        */
 
-            'slug' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:255',
-                'unique:categories,slug,' . $category->id,
-            ],
+        $oldSlug = $category->slug;
 
-            'description' => [
-                'nullable',
-                'string',
-            ],
-        ]);
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Request
+        |--------------------------------------------------------------------------
+        */
+
+        $validated = $request->validated();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Generate Slug From Name (If Not Provided)
+        |--------------------------------------------------------------------------
+        */
 
         if (
             isset($validated['name']) &&
             !isset($validated['slug'])
         ) {
-            $validated['slug'] =
-                Str::slug($validated['name']);
+            $validated['slug'] = Str::slug($validated['name']);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Update Category
+        |--------------------------------------------------------------------------
+        */
+
         $category->update($validated);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Refresh Model
+        |--------------------------------------------------------------------------
+        */
+
+        $category->refresh();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Clear Cache
+        |--------------------------------------------------------------------------
+        */
+
+        // Clear old slug cache (if slug changed)
+        CacheService::clearCategory($oldSlug);
+
+        // Clear current slug cache
+        CacheService::clearCategory($category->slug);
+
+        // Clear cached category lists and dashboard statistics
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Response
+        |--------------------------------------------------------------------------
+        */
 
         return response()->json([
             'success' => true,
             'message' => 'Category updated successfully.',
-            'data' => $category->fresh(),
+            'data' => $category,
         ]);
     }
 
 
-    /**
-     * Delete category.
-     */
     public function destroy(Category $category): JsonResponse
     {
         /*
@@ -158,7 +187,18 @@ class CategoryController extends Controller
             ], 422);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Clear Cache Before Delete
+        |--------------------------------------------------------------------------
+        */
+
+        CacheService::clearCategory($category->slug);
+
         $category->delete();
+
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         return response()->json([
             'success' => true,

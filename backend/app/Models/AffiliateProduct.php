@@ -9,6 +9,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
+use App\Models\AffiliateNetwork;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Post;
+use App\Models\SeoMeta;
+
 class AffiliateProduct extends Model
 {
     use HasFactory, SoftDeletes;
