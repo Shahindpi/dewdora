@@ -12,9 +12,8 @@ use Illuminate\Support\Str;
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Services\CacheService;
-
-
-
+use App\Support\ApiResponse;
+use App\Http\Resources\Api\PostResource;
 
 
 class PostController extends Controller
@@ -22,7 +21,7 @@ class PostController extends Controller
     /**
      * Display a listing of posts.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
         $query = Post::query()
             ->with([
@@ -89,17 +88,17 @@ class PostController extends Controller
 
         $posts = $query->paginate($perPage);
 
-        return response()->json([
-            'success' => true,
-            'data' => $posts,
-        ]);
+        return ApiResponse::paginated(
+            PostResource::collection($posts),
+            'Posts retrieved successfully.'
+        );
     }
 
 
     /**
      * Store a newly created post.
      */
-    public function store(StorePostRequest $request): JsonResponse
+    public function store(StorePostRequest $request)
     {
         $validated = $request->validated();
 
@@ -157,20 +156,12 @@ class PostController extends Controller
             'user',
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Clear Cache
-        |--------------------------------------------------------------------------
-        */
 
-        CacheService::clearPublicCaches();
-        CacheService::clearDashboardCaches();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Post created successfully.',
-            'data' => $post,
-        ], 201);
+        return ApiResponse::success(
+            new PostResource($post),
+            'Post created successfully.',
+            201
+        );
     }
 
 
@@ -284,7 +275,7 @@ class PostController extends Controller
     /**
      * Display the specified post.
      */
-    public function show(Post $post): JsonResponse
+    public function show(Post $post)
     {
         $post->load([
             'category',
@@ -294,10 +285,10 @@ class PostController extends Controller
             'seoMeta',
         ]);
 
-        return response()->json([
-            'success' => true,
-            'data' => $post,
-        ]);
+        return ApiResponse::success(
+            new PostResource($post),
+            'Post retrieved successfully.'
+        );
     }
 
 
@@ -307,7 +298,7 @@ class PostController extends Controller
     public function update(
         UpdatePostRequest $request,
         Post $post
-    ): JsonResponse {
+    ) {
 
         $validated = $request->validated();
 
@@ -346,21 +337,11 @@ class PostController extends Controller
             'user',
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Clear Cache
-        |--------------------------------------------------------------------------
-        */
 
-        CacheService::clearPost($post->slug);
-        CacheService::clearPublicCaches();
-        CacheService::clearDashboardCaches();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Post updated successfully.',
-            'data' => $post,
-        ]);
+        return ApiResponse::success(
+            new PostResource($post),
+            'Post updated successfully.'
+        );
     }
 
 
@@ -375,9 +356,6 @@ class PostController extends Controller
         CacheService::clearPost($post->slug);
 
         $post->delete();
-
-        CacheService::clearPublicCaches();
-        CacheService::clearDashboardCaches();
 
         return response()->json([
             'success' => true,

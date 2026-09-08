@@ -2,16 +2,20 @@
 
 namespace App\Support;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+
 class ApiResponse
 {
     /**
-     * Successful response.
+     * Successful JSON response.
      */
     public static function success(
         mixed $data = null,
-        string $message = 'Request successful.',
+        string $message = 'Success.',
         int $status = 200
-    ) {
+    ): JsonResponse {
+
         return response()->json([
             'success' => true,
             'message' => $message,
@@ -19,77 +23,33 @@ class ApiResponse
         ], $status);
     }
 
-
     /**
-     * Error response.
+     * Error JSON response.
      */
     public static function error(
         string $message = 'Something went wrong.',
         mixed $errors = null,
         int $status = 400
-    ) {
+    ): JsonResponse {
+
         return response()->json([
             'success' => false,
             'message' => $message,
             'errors' => $errors,
-            'data' => null,
         ], $status);
     }
 
-
     /**
-     * Validation error response.
+     * Paginated Resource Response.
      */
-    public static function validation(
-        mixed $errors,
-        string $message = 'Validation failed.'
-    ) {
-        return self::error(
-            $message,
-            $errors,
-            422
-        );
-    }
+    public static function paginated(
+        AnonymousResourceCollection $resource,
+        string $message = 'Success.'
+    ): AnonymousResourceCollection {
 
-
-    /**
-     * Not found response.
-     */
-    public static function notFound(
-        string $message = 'Resource not found.'
-    ) {
-        return self::error(
-            $message,
-            null,
-            404
-        );
-    }
-
-
-    /**
-     * Unauthorized response.
-     */
-    public static function unauthorized(
-        string $message = 'Unauthenticated.'
-    ) {
-        return self::error(
-            $message,
-            null,
-            401
-        );
-    }
-
-
-    /**
-     * Forbidden response.
-     */
-    public static function forbidden(
-        string $message = 'You do not have permission to perform this action.'
-    ) {
-        return self::error(
-            $message,
-            null,
-            403
-        );
+        return $resource->additional([
+            'success' => true,
+            'message' => $message,
+        ]);
     }
 }

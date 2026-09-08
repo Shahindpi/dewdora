@@ -10,6 +10,8 @@ use App\Http\Resources\Api\CategoryResource;
 use App\Http\Resources\Api\PostResource;
 use App\Http\Resources\Api\SeoMetaResource;
 
+use App\Support\ImageUrl;
+
 class AffiliateProductResource extends JsonResource
 {
     /**
@@ -40,7 +42,15 @@ class AffiliateProductResource extends JsonResource
 
             'rating' => $this->rating,
 
-            'featured_image' => $this->featured_image,
+            /*
+            |--------------------------------------------------------------------------
+            | Image
+            |--------------------------------------------------------------------------
+            */
+
+            'featured_image' => ImageUrl::make(
+                $this->featured_image
+            ),
 
             'pros' => $this->pros,
 
@@ -65,7 +75,6 @@ class AffiliateProductResource extends JsonResource
             'seo' => SeoMetaResource::make(
                 $this->whenLoaded('seoMeta')
             ),
-
         ];
     }
 }

@@ -1,7 +1,8 @@
 <?php
 
 namespace App\Http\Controllers\Api\Public;
-
+use Illuminate\Support\Facades\Cache;
+use App\Services\CacheService;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
 use Illuminate\Http\JsonResponse;
@@ -10,7 +11,7 @@ use Illuminate\Http\Request;
 use App\Http\Resources\Api\PostResource;
 use App\Support\ApiResponse;
 use App\Http\Resources\Api\Collections\PaginatedApiCollection;
-use Illuminate\Support\Facades\Cache;
+
 
 class PostController extends Controller
 {
@@ -49,7 +50,10 @@ class PostController extends Controller
                     ->with([
                         'category',
                         'tags',
-                        'seoMeta',
+
+                        'seoMeta' => function ($query) {
+                            $query->with('seoable');
+                        },
                     ])
 
                     // Only published posts
@@ -113,10 +117,42 @@ class PostController extends Controller
             }
         );
 
-        return PostResource::collection($posts)
-            ->additional([
-                'success' => true,
-            ]);
+        return ApiResponse::paginated(
+            PostResource::collection($posts),
+            'Posts retrieved successfully.'
+        );
+    }
+
+    /**
+     * Popular published posts.
+     */
+    public function popular(): JsonResponse
+    {
+        $posts = Cache::remember(
+            CacheService::popularPostsKey(),
+            now()->addHours(6),
+            function () {
+
+                return Post::query()
+                    ->where('status', 'published')
+                    ->whereNotNull('published_at')
+                    ->where('published_at', '<=', now())
+                    ->with([
+                        'category',
+                        'tags',
+                        'seoMeta.seoable',
+                    ])
+                    ->orderByDesc('views')
+                    ->orderByDesc('published_at')
+                    ->limit(6)
+                    ->get();
+            }
+        );
+
+        return ApiResponse::success(
+            PostResource::collection($posts),
+            'Popular posts retrieved successfully.'
+        );
     }
 
     /**
@@ -159,7 +195,9 @@ class PostController extends Controller
                                 ->orderBy('post_product.sort_order');
                         },
 
-                        'seoMeta',
+                        'seoMeta' => function ($query) {
+                            $query->with('seoable');
+                        },
                     ])
                     ->where('slug', $slug)
                     ->where('status', 'published')

@@ -11,7 +11,8 @@ use Illuminate\Support\Str;
 use App\Http\Requests\StoreAffiliateProductRequest;
 use App\Http\Requests\UpdateAffiliateProductRequest;
 use App\Services\CacheService;
-
+use App\Support\ApiResponse;
+use App\Http\Resources\Api\AffiliateProductResource;
 
 
 class AffiliateProductController extends Controller
@@ -19,7 +20,7 @@ class AffiliateProductController extends Controller
     /**
      * List affiliate products.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
         $query = AffiliateProduct::query()
             ->with([
@@ -107,10 +108,10 @@ class AffiliateProductController extends Controller
 
         $products = $query->paginate($perPage);
 
-        return response()->json([
-            'success' => true,
-            'data' => $products,
-        ]);
+        return ApiResponse::paginated(
+            AffiliateProductResource::collection($products),
+            'Affiliate products retrieved successfully.'
+        );
     }
 
 
@@ -119,7 +120,7 @@ class AffiliateProductController extends Controller
      */
     public function store(
         StoreAffiliateProductRequest $request
-    ): JsonResponse {
+    ) {
 
         $validated = $request->validated();
 
@@ -171,21 +172,12 @@ class AffiliateProductController extends Controller
             'category',
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Clear Cache
-        |--------------------------------------------------------------------------
-        */
 
-        CacheService::clearProduct($product->slug);
-        CacheService::clearPublicCaches();
-        CacheService::clearDashboardCaches();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Affiliate product created successfully.',
-            'data' => $product,
-        ], 201);
+        return ApiResponse::success(
+            new AffiliateProductResource($product),
+            'Affiliate product created successfully.',
+            201
+        );
     }
 
 
@@ -194,7 +186,7 @@ class AffiliateProductController extends Controller
      */
     public function show(
         AffiliateProduct $affiliateProduct
-    ): JsonResponse {
+    ) {
 
         $affiliateProduct->load([
             'brand',
@@ -217,7 +209,7 @@ class AffiliateProductController extends Controller
     public function update(
         UpdateAffiliateProductRequest $request,
         AffiliateProduct $affiliateProduct
-    ): JsonResponse {
+    ) {
 
         /*
         |--------------------------------------------------------------------------
@@ -280,9 +272,6 @@ class AffiliateProductController extends Controller
         CacheService::clearProduct($oldSlug);
         CacheService::clearProduct($affiliateProduct->slug);
 
-        CacheService::clearPublicCaches();
-        CacheService::clearDashboardCaches();
-
         return response()->json([
             'success' => true,
             'message' => 'Affiliate product updated successfully.',
@@ -303,12 +292,7 @@ class AffiliateProductController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        CacheService::clearProduct($affiliateProduct->slug);
-
         $affiliateProduct->delete();
-
-        CacheService::clearPublicCaches();
-        CacheService::clearDashboardCaches();
 
         return response()->json([
             'success' => true,

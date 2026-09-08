@@ -10,6 +10,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 use App\Http\Requests\UpdateSeoMetaRequest;
+use App\Services\CacheService;
+use App\Support\ApiResponse;
+use App\Http\Resources\Api\PostResource;
 
 class SeoMetaController extends Controller
 {
@@ -19,7 +22,7 @@ class SeoMetaController extends Controller
     public function updatePostSeo(
         UpdateSeoMetaRequest $request,
         Post $post
-    ): JsonResponse {
+    ) {
 
         $validated = $request->validated();
 
@@ -31,11 +34,11 @@ class SeoMetaController extends Controller
             $validated
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Post SEO metadata updated successfully.',
-            'data' => $seoMeta,
-        ]);
+
+        return ApiResponse::success(
+            $seoMeta,
+            'Post SEO metadata updated successfully.'
+        );
     }
 
 
@@ -45,7 +48,7 @@ class SeoMetaController extends Controller
     public function updateAffiliateProductSeo(
         Request $request,
         AffiliateProduct $affiliateProduct
-    ): JsonResponse {
+    ) {
 
         $validated = $request->validate([
             'meta_title' => [
@@ -127,13 +130,11 @@ class SeoMetaController extends Controller
                 $validated
             );
 
-        return response()->json([
-            'success' => true,
-            'message' =>
-                'Affiliate product SEO metadata updated successfully.',
 
-            'data' => $seoMeta,
-        ]);
+        return ApiResponse::success(
+            $seoMeta,
+            'Affiliate product SEO metadata updated successfully.'
+        );
     }
 
 
@@ -142,7 +143,7 @@ class SeoMetaController extends Controller
      */
     public function destroyPostSeo(
         Post $post
-    ): JsonResponse {
+    ) {
 
         $seoMeta = $post->seoMeta;
 
@@ -150,20 +151,26 @@ class SeoMetaController extends Controller
             $seoMeta->delete();
         }
 
-        return response()->json([
-            'success' => true,
-            'message' =>
-                'Post SEO metadata deleted successfully.',
-        ]);
-    }
+        /*
+        |--------------------------------------------------------------------------
+        | Clear Cache
+        |--------------------------------------------------------------------------
+        */
 
+        CacheService::clearPost($post->slug);
+
+        return ApiResponse::success(
+            null,
+            'Post SEO metadata deleted successfully.'
+        );
+    }
 
     /**
      * Delete SEO metadata from an affiliate product.
      */
     public function destroyAffiliateProductSeo(
         AffiliateProduct $affiliateProduct
-    ): JsonResponse {
+    ) {
 
         $seoMeta = $affiliateProduct->seoMeta;
 
@@ -171,10 +178,9 @@ class SeoMetaController extends Controller
             $seoMeta->delete();
         }
 
-        return response()->json([
-            'success' => true,
-            'message' =>
-                'Affiliate product SEO metadata deleted successfully.',
-        ]);
+        return ApiResponse::success(
+            null,
+            'Affiliate product SEO metadata deleted successfully.'
+        );
     }
 }

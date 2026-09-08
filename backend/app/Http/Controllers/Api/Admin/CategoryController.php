@@ -11,6 +11,8 @@ use Illuminate\Support\Str;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Services\CacheService;
+use App\Support\ApiResponse;
+use App\Http\Resources\Api\CategoryResource;
 
 
 class CategoryController extends Controller
@@ -18,7 +20,7 @@ class CategoryController extends Controller
     /**
      * List categories.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
         $query = Category::query()
             ->withCount('posts')
@@ -37,17 +39,17 @@ class CategoryController extends Controller
             )
         );
 
-        return response()->json([
-            'success' => true,
-            'data' => $categories,
-        ]);
+        return ApiResponse::paginated(
+            CategoryResource::collection($categories),
+            'Categories retrieved successfully.'
+        );
     }
 
 
     /**
      * Create category.
      */
-    public function store(StoreCategoryRequest $request): JsonResponse
+    public function store(StoreCategoryRequest $request)
     {
         $validated = $request->validated();
 
@@ -57,35 +59,26 @@ class CategoryController extends Controller
 
         $category = Category::create($validated);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Clear Cache
-        |--------------------------------------------------------------------------
-        */
 
-        CacheService::clearCategory($category->slug);
-        CacheService::clearPublicCaches();
-        CacheService::clearDashboardCaches();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Category created successfully.',
-            'data' => $category,
-        ], 201);
+        return ApiResponse::success(
+            new CategoryResource($category),
+            'Category created successfully.',
+            201
+        );
     }
 
 
     /**
      * Show category.
      */
-    public function show(Category $category): JsonResponse
+    public function show(Category $category)
     {
         $category->loadCount('posts');
 
-        return response()->json([
-            'success' => true,
-            'data' => $category,
-        ]);
+        return ApiResponse::success(
+            new CategoryResource($category),
+            'Category retrieved successfully.'
+        );
     }
 
 
@@ -95,7 +88,7 @@ class CategoryController extends Controller
     public function update(
         UpdateCategoryRequest $request,
         Category $category
-    ): JsonResponse {
+    ) {
 
         /*
         |--------------------------------------------------------------------------
@@ -154,21 +147,18 @@ class CategoryController extends Controller
         // Clear current slug cache
         CacheService::clearCategory($category->slug);
 
-        // Clear cached category lists and dashboard statistics
-        CacheService::clearPublicCaches();
-        CacheService::clearDashboardCaches();
-
         /*
         |--------------------------------------------------------------------------
         | Response
         |--------------------------------------------------------------------------
         */
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Category updated successfully.',
-            'data' => $category,
-        ]);
+        return ApiResponse::success(
+            new CategoryResource(
+                $category->fresh()->loadCount('posts')
+            ),
+            'Category updated successfully.'
+        );
     }
 
 
@@ -197,8 +187,6 @@ class CategoryController extends Controller
 
         $category->delete();
 
-        CacheService::clearPublicCaches();
-        CacheService::clearDashboardCaches();
 
         return response()->json([
             'success' => true,

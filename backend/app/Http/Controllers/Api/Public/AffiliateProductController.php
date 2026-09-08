@@ -7,6 +7,7 @@ use App\Models\AffiliateProduct;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Support\ApiResponse;
+use App\Services\CacheService;
 
 use App\Http\Resources\Api\AffiliateProductResource;
 use App\Http\Resources\Api\PostResource;
@@ -42,77 +43,21 @@ class AffiliateProductController extends Controller
         */
 
         $products = Cache::remember(
-            $cacheKey,
-            now()->addMinutes(20),
-            function () use ($request, $perPage) {
+            CacheService::publicProductsKey(),
+            now()->addHours(6),
+            function () use ($perPage) {
 
                 return AffiliateProduct::query()
+                    ->where('status', true)
                     ->with([
                         'brand',
                         'category',
-                        'seoMeta',
+
+                        'seoMeta' => function ($query) {
+                            $query->with('seoable');
+                        },
                     ])
-
-                    ->where('status', true)
-
-                    // Category filter
-                    ->when(
-                        $request->filled('category'),
-                        function ($query) use ($request) {
-                            $query->whereHas(
-                                'category',
-                                function ($categoryQuery) use ($request) {
-                                    $categoryQuery->where(
-                                        'slug',
-                                        $request->string('category')
-                                    );
-                                }
-                            );
-                        }
-                    )
-
-                    // Brand filter
-                    ->when(
-                        $request->filled('brand'),
-                        function ($query) use ($request) {
-                            $query->whereHas(
-                                'brand',
-                                function ($brandQuery) use ($request) {
-                                    $brandQuery->where(
-                                        'slug',
-                                        $request->string('brand')
-                                    );
-                                }
-                            );
-                        }
-                    )
-
-                    // Featured filter
-                    ->when(
-                        $request->boolean('featured'),
-                        fn ($query) => $query->where('featured', true)
-                    )
-
-                    // Search
-                    ->when(
-                        $request->filled('search'),
-                        function ($query) use ($request) {
-                            $search = $request->string('search');
-
-                            $query->where(function ($q) use ($search) {
-                                $q->where('name', 'like', "%{$search}%")
-                                    ->orWhere(
-                                        'short_description',
-                                        'like',
-                                        "%{$search}%"
-                                    );
-                            });
-                        }
-                    )
-
-                    ->orderByDesc('featured')
-                    ->orderBy('name')
-
+                    ->latest()
                     ->paginate($perPage);
             }
         );
@@ -123,32 +68,62 @@ class AffiliateProductController extends Controller
         ]);
     }
 
+    /**
+     * Featured affiliate products.
+     */
+    public function featured(): JsonResponse
+    {
+        $products = Cache::remember(
+            CacheService::featuredProductsKey(),
+            now()->addHours(6),
+            function () {
+
+                return AffiliateProduct::query()
+                    ->where('status', true)
+                    ->where('featured', true)
+                    ->with([
+                        'brand',
+                        'category',
+
+                        'seoMeta' => function ($query) {
+                            $query->with('seoable');
+                        },
+                    ])
+                    ->orderByDesc('rating')
+                    ->orderByDesc('updated_at')
+                    ->limit(8)
+                    ->get();
+            }
+        );
+
+        return ApiResponse::success(
+            AffiliateProductResource::collection($products),
+            'Featured products retrieved successfully.'
+        );
+    }
 
 
     /**
      * Show a single affiliate product.
      */
-    public function show(string $slug)
+    public function show(string $slug): JsonResponse
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Find Product (Cached)
-        |--------------------------------------------------------------------------
-        */
-
         $product = Cache::remember(
-            "public_product_{$slug}",
-            now()->addMinutes(20),
+            CacheService::publicProductKey($slug),
+            now()->addHours(6),
             function () use ($slug) {
 
                 return AffiliateProduct::query()
+                    ->where('slug', $slug)
+                    ->where('status', true)
                     ->with([
                         'brand',
                         'category',
-                        'seoMeta',
+
+                        'seoMeta' => function ($query) {
+                            $query->with('seoable');
+                        },
                     ])
-                    ->where('slug', $slug)
-                    ->where('status', true)
                     ->firstOrFail();
             }
         );

@@ -11,6 +11,8 @@ class SeoMeta extends Model
     use HasFactory;
 
     protected $fillable = [
+        'seoable_type',
+        'seoable_id',
         'meta_title',
         'meta_description',
         'canonical_url',
@@ -31,7 +33,10 @@ class SeoMeta extends Model
         ];
     }
 
-    public function seoable(): MorphTo
+    /**
+     * Parent model (Post or Affiliate Product).
+     */
+    public function seoable()
     {
         return $this->morphTo();
     }

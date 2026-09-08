@@ -4,6 +4,7 @@ namespace App\Http\Resources\Api;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Support\ImageUrl;
 
 class BrandResource extends JsonResource
 {
@@ -16,14 +17,17 @@ class BrandResource extends JsonResource
             'id' => $this->id,
 
             'name' => $this->name,
-
             'slug' => $this->slug,
 
+            'website' => $this->website,
+            'logo' => $this->logo,
             'description' => $this->description,
 
-            'website_url' => $this->website_url,
+            'affiliate_products_count' =>
+                $this->whenCounted('affiliateProducts'),
 
-            'logo' => $this->logo,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

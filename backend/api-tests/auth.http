@@ -27,3 +27,5 @@ POST http://localhost:8000/api/logout
 
 GET http://localhost:8000/api/admin/dashboard
 Accept: application/json
+
+

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 use App\Models\Category;
 use App\Models\User;
@@ -86,6 +87,26 @@ class Post extends Model
             SeoMeta::class,
             'seoable'
         );
+    }
+
+    /**
+     * Approved comments.
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class)
+            ->where('status', 'approved')
+            ->whereNull('parent_id')
+            ->with('replies')
+            ->latest();
+    }
+
+    /**
+     * All comments (Admin).
+     */
+    public function allComments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
     }
 
 }

@@ -2,10 +2,20 @@
 
 namespace App\Providers;
 
-use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+
+use App\Models\Post;
+use App\Models\Category;
+use App\Models\Tag;
+use App\Models\AffiliateProduct;
+
+use App\Observers\PostObserver;
+use App\Observers\CategoryObserver;
+use App\Observers\TagObserver;
+use App\Observers\AffiliateProductObserver;
+
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Cache\RateLimiting\Limit;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -17,17 +27,32 @@ class AppServiceProvider extends ServiceProvider
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(60)
-                ->by(
-                    $request->user()?->id
-                    ?? $request->ip()
-                );
+        /*
+        |--------------------------------------------------------------------------
+        | API Rate Limiter
+        |--------------------------------------------------------------------------
+        */
+
+        RateLimiter::for('api', function ($request) {
+            return Limit::perMinute(60)->by(
+                $request->user()?->id ?: $request->ip()
+            );
         });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Model Observers
+        |--------------------------------------------------------------------------
+        */
+
+        Post::observe(PostObserver::class);
+
+        Category::observe(CategoryObserver::class);
+
+        Tag::observe(TagObserver::class);
+
+        AffiliateProduct::observe(AffiliateProductObserver::class);
     }
 }

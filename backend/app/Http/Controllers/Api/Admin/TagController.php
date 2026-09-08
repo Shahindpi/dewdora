@@ -8,11 +8,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
-
+use App\Services\CacheService;
+use App\Support\ApiResponse;
+use App\Http\Resources\Api\TagResource;
 
 use App\Http\Requests\UpdateTagRequest;
 use App\Http\Requests\StoreTagRequest;
-use App\Services\CacheService;
 
 
 
@@ -21,7 +22,7 @@ class TagController extends Controller
     /**
      * List tags.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
         $query = Tag::query()
             ->withCount('posts')
@@ -40,17 +41,17 @@ class TagController extends Controller
             )
         );
 
-        return response()->json([
-            'success' => true,
-            'data' => $tags,
-        ]);
+        return ApiResponse::paginated(
+            TagResource::collection($tags),
+            'Tags retrieved successfully.'
+        );
     }
 
 
     /**
      * Create tag.
      */
-    public function store(StoreTagRequest $request): JsonResponse
+    public function store(StoreTagRequest $request)
     {
         $validated = $request->validated();
 
@@ -72,34 +73,25 @@ class TagController extends Controller
 
         $tag = Tag::create($validated);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Clear Cache
-        |--------------------------------------------------------------------------
-        */
 
-        CacheService::clearTag($tag->slug);
-        CacheService::clearPublicCaches();
-        CacheService::clearDashboardCaches();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Tag created successfully.',
-            'data' => $tag,
-        ], 201);
+        return ApiResponse::success(
+            new TagResource($tag),
+            'Tag created successfully.',
+            201
+        );
     }
 
     /**
      * Show tag.
      */
-    public function show(Tag $tag): JsonResponse
+    public function show(Tag $tag)
     {
         $tag->loadCount('posts');
 
-        return response()->json([
-            'success' => true,
-            'data' => $tag,
-        ]);
+        return ApiResponse::success(
+            new TagResource($tag),
+            'Tag retrieved successfully.'
+        );
     }
 
 
@@ -109,7 +101,7 @@ class TagController extends Controller
     public function update(
         UpdateTagRequest $request,
         Tag $tag
-    ): JsonResponse {
+    ) {
 
         /*
         |--------------------------------------------------------------------------
@@ -166,14 +158,12 @@ class TagController extends Controller
         CacheService::clearTag($oldSlug);
         CacheService::clearTag($tag->slug);
 
-        CacheService::clearPublicCaches();
-        CacheService::clearDashboardCaches();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Tag updated successfully.',
-            'data' => $tag,
-        ]);
+        return ApiResponse::success(
+            new TagResource(
+                $tag->fresh()->loadCount('posts')
+            ),
+            'Tag updated successfully.'
+        );
     }
 
 
@@ -182,18 +172,9 @@ class TagController extends Controller
      */
     public function destroy(Tag $tag): JsonResponse
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Clear Cache Before Delete
-        |--------------------------------------------------------------------------
-        */
-
-        CacheService::clearTag($tag->slug);
 
         $tag->delete();
 
-        CacheService::clearPublicCaches();
-        CacheService::clearDashboardCaches();
 
         return response()->json([
             'success' => true,
