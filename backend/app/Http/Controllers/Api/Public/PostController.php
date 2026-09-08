@@ -47,66 +47,110 @@ class PostController extends Controller
             function () use ($request, $perPage) {
 
                 return Post::query()
-                    ->with([
-                        'category',
-                        'tags',
 
-                        'seoMeta' => function ($query) {
-                            $query->with('seoable');
-                        },
+                    ->select([
+                        'id',
+                        'user_id',
+                        'category_id',
+                        'title',
+                        'slug',
+                        'excerpt',
+                        'featured_image',
+                        'post_type',
+                        'status',
+                        'published_at',
+                        'views',
+                        'reading_time',
+                        'allow_comments',
                     ])
 
-                    // Only published posts
-                    ->where('status', 'published')
-                    ->whereNotNull('published_at')
-                    ->where('published_at', '<=', now())
+                    ->published()
 
-                    // Category filter
+                    ->with([
+                        'category:id,name,slug',
+
+                        'tags:id,name,slug',
+
+                        'seoMeta:id,seoable_id,seoable_type,meta_title,meta_description,canonical_url',
+                    ])
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Category Filter
+                    |--------------------------------------------------------------------------
+                    */
+
                     ->when(
                         $request->filled('category'),
                         function ($query) use ($request) {
-                            $query->whereHas('category', function ($categoryQuery) use ($request) {
-                                $categoryQuery->where(
-                                    'slug',
-                                    $request->string('category')
-                                );
-                            });
+                            $query->whereHas(
+                                'category',
+                                function ($categoryQuery) use ($request) {
+                                    $categoryQuery->where(
+                                        'slug',
+                                        $request->string('category')
+                                    );
+                                }
+                            );
                         }
                     )
 
-                    // Tag filter
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Tag Filter
+                    |--------------------------------------------------------------------------
+                    */
+
                     ->when(
                         $request->filled('tag'),
                         function ($query) use ($request) {
-                            $query->whereHas('tags', function ($tagQuery) use ($request) {
-                                $tagQuery->where(
-                                    'slug',
-                                    $request->string('tag')
-                                );
-                            });
+                            $query->whereHas(
+                                'tags',
+                                function ($tagQuery) use ($request) {
+                                    $tagQuery->where(
+                                        'slug',
+                                        $request->string('tag')
+                                    );
+                                }
+                            );
                         }
                     )
 
-                    // Search
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Search Filter
+                    |--------------------------------------------------------------------------
+                    */
+
                     ->when(
                         $request->filled('search'),
                         function ($query) use ($request) {
-                            $search = $request->string('search');
+
+                            $search = trim($request->string('search'));
 
                             $query->where(function ($q) use ($search) {
                                 $q->where('title', 'like', "%{$search}%")
-                                    ->orWhere('excerpt', 'like', "%{$search}%");
+                                ->orWhere('excerpt', 'like', "%{$search}%");
                             });
                         }
                     )
 
-                    // Sorting
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Sorting
+                    |--------------------------------------------------------------------------
+                    */
+
                     ->when(
                         $request->filled('sort'),
                         function ($query) use ($request) {
+
                             match ($request->string('sort')->value()) {
+
                                 'oldest' => $query->orderBy('published_at'),
+
                                 'popular' => $query->orderByDesc('views'),
+
                                 default => $query->orderByDesc('published_at'),
                             };
                         },
@@ -162,12 +206,6 @@ class PostController extends Controller
     {
         /*
         |--------------------------------------------------------------------------
-        | Find the post
-        |--------------------------------------------------------------------------
-        */
-
-        /*
-        |--------------------------------------------------------------------------
         | Find the Post (Cached)
         |--------------------------------------------------------------------------
         */
@@ -178,96 +216,135 @@ class PostController extends Controller
             function () use ($slug) {
 
                 return Post::query()
-                    ->with([
-                        'category',
 
-                        'tags',
+                    ->select([
+                        'id',
+                        'user_id',
+                        'category_id',
+                        'title',
+                        'slug',
+                        'excerpt',
+                        'content',
+                        'featured_image',
+                        'post_type',
+                        'status',
+                        'published_at',
+                        'views',
+                        'reading_time',
+                        'allow_comments',
+                    ])
+
+                    ->published()
+
+                    ->with([
+
+                        'category:id,name,slug',
+
+                        'tags:id,name,slug',
+
+                        'seoMeta',
 
                         'affiliateProducts' => function ($query) {
+
                             $query
+                                ->select([
+                                    'affiliate_products.id',
+                                    'affiliate_products.brand_id',
+                                    'affiliate_products.category_id',
+                                    'affiliate_products.name',
+                                    'affiliate_products.slug',
+                                    'affiliate_products.short_description',
+                                    'affiliate_products.price',
+                                    'affiliate_products.currency',
+                                    'affiliate_products.rating',
+                                    'affiliate_products.featured_image',
+                                ])
+
+                                ->where('status', true)
+
                                 ->with([
-                                    'brand',
-                                    'category',
+                                    'brand:id,name,slug,logo',
+                                    'category:id,name,slug',
                                     'seoMeta',
                                 ])
-                                ->where('status', true)
-                                ->orderBy('post_product.is_primary', 'desc')
+
+                                ->orderByDesc('post_product.is_primary')
                                 ->orderBy('post_product.sort_order');
                         },
 
-                        'seoMeta' => function ($query) {
-                            $query->with('seoable');
-                        },
                     ])
+
                     ->where('slug', $slug)
-                    ->where('status', 'published')
-                    ->whereNotNull('published_at')
-                    ->where('published_at', '<=', now())
+
                     ->firstOrFail();
             }
         );
 
+        /*
+        |--------------------------------------------------------------------------
+        | Increment View Count
+        |--------------------------------------------------------------------------
+        */
+
+        $post->increment('views');
 
         /*
         |--------------------------------------------------------------------------
-        | Get related posts
+        | Related Posts
         |--------------------------------------------------------------------------
         */
 
         $tagIds = $post->tags
             ->pluck('id')
-            ->values()
             ->all();
 
         $relatedPosts = Post::query()
-            ->with([
-                'category',
-                'tags',
+
+            ->select([
+                'id',
+                'category_id',
+                'title',
+                'slug',
+                'excerpt',
+                'featured_image',
+                'reading_time',
+                'published_at',
+                'views',
             ])
+
+            ->published()
+
+            ->with([
+                'category:id,name,slug',
+                'tags:id,name,slug',
+            ])
+
             ->where('id', '!=', $post->id)
-            ->where('status', 'published')
-            ->whereNotNull('published_at')
-            ->where('published_at', '<=', now())
+
             ->where(function ($query) use ($post, $tagIds) {
 
-                /*
-                |--------------------------------------------------------------------------
-                | Same category
-                |--------------------------------------------------------------------------
-                */
+                $query->where('category_id', $post->category_id);
 
-                $query->where(
-                    'category_id',
-                    $post->category_id
-                );
+                if (! empty($tagIds)) {
 
-
-                /*
-                |--------------------------------------------------------------------------
-                | OR shared tags
-                |--------------------------------------------------------------------------
-                */
-
-                if (!empty($tagIds)) {
                     $query->orWhereHas(
                         'tags',
                         function ($tagQuery) use ($tagIds) {
-                            $tagQuery->whereIn(
-                                'tags.id',
-                                $tagIds
-                            );
+                            $tagQuery->whereIn('tags.id', $tagIds);
                         }
                     );
                 }
             })
-            ->latest('published_at')
-            ->limit(6)
-            ->get();
 
+            ->latest('published_at')
+
+            ->limit(6)
+
+            ->get();
 
         /*
         |--------------------------------------------------------------------------
-        | Return response
+        | Return Response
         |--------------------------------------------------------------------------
         */
 
@@ -275,8 +352,7 @@ class PostController extends Controller
             [
                 'post' => new PostResource($post),
 
-                'related_posts' =>
-                    PostResource::collection($relatedPosts),
+                'related_posts' => PostResource::collection($relatedPosts),
             ],
             'Post retrieved successfully.'
         );

@@ -50,12 +50,9 @@ class AffiliateProductController extends Controller
                 return AffiliateProduct::query()
                     ->where('status', true)
                     ->with([
-                        'brand',
-                        'category',
-
-                        'seoMeta' => function ($query) {
-                            $query->with('seoable');
-                        },
+                        'brand:id,name,slug,logo',
+                        'category:id,name,slug',
+                        'seoMeta:id,seoable_id,seoable_type,meta_title,meta_description,canonical_url',
                     ])
                     ->latest()
                     ->paginate($perPage);

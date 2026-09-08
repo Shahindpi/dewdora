@@ -16,6 +16,8 @@ use App\Http\Controllers\Api\Admin\AffiliateNetworkController;
 use App\Http\Controllers\Api\Admin\NewsletterSubscriberController;
 use App\Http\Controllers\Api\Admin\ContactMessageController;
 use App\Http\Controllers\Api\Admin\CommentController as AdminCommentController;
+use App\Http\Controllers\Api\Admin\ProfileController;
+use App\Http\Controllers\Api\Admin\SiteSettingController;
 
 use App\Http\Controllers\Api\Public\AffiliateNetworkController as PublicAffiliateNetworkController;
 use App\Http\Controllers\Api\Public\BrandController as PublicBrandController;
@@ -30,6 +32,8 @@ use App\Http\Controllers\Api\Admin\MediaController;
 use App\Http\Controllers\Api\Public\NewsletterController;
 use App\Http\Controllers\Api\Public\ContactController;
 use App\Http\Controllers\Api\Public\CommentController;
+use App\Http\Controllers\Api\Public\SiteSettingController as PublicSiteSettingController;
+use App\Http\Controllers\Api\Public\HomeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,10 +49,10 @@ Route::prefix('v1')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::post('/login', [
+    Route::post('/auth/login', [
         AuthController::class,
         'login',
-    ]);
+    ])->middleware('throttle:login');
 
     /*
     |--------------------------------------------------------------------------
@@ -85,6 +89,18 @@ Route::prefix('v1')->group(function () {
                 ContactController::class,
                 'store',
             ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Public Site Settings
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get('/settings', [
+                PublicSiteSettingController::class,
+                'show',
+            ]);
+
             /*
             |--------------------------------------------------------------------------
             | Search
@@ -105,6 +121,17 @@ Route::prefix('v1')->group(function () {
             Route::get('/search/suggestions', [
                 SearchController::class,
                 'suggestions',
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Homepage
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get('/home', [
+                HomeController::class,
+                'index',
             ]);
 
             /*
@@ -256,18 +283,19 @@ Route::prefix('v1')->group(function () {
     */
     Route::middleware('auth:sanctum')->group(function () {
 
+
         /*
         |--------------------------------------------------------------------------
-        | Authentication
+        | Authenticated User
         |--------------------------------------------------------------------------
         */
 
-        Route::get('/me', [
+        Route::get('/auth/me', [
             AuthController::class,
             'me',
         ]);
 
-        Route::post('/logout', [
+        Route::post('/auth/logout', [
             AuthController::class,
             'logout',
         ]);
@@ -281,6 +309,28 @@ Route::prefix('v1')->group(function () {
         Route::middleware('admin')
             ->prefix('admin')
             ->group(function () {
+
+            /*
+            |--------------------------------------------------------------------------
+            | Site Settings
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get('/settings', [
+                SiteSettingController::class,
+                'show',
+            ]);
+
+            Route::put('/settings', [
+                SiteSettingController::class,
+                'update',
+            ]);
+
+            Route::post('/settings/assets', [
+                SiteSettingController::class,
+                'uploadAssets',
+            ]);
+
             /*
             |--------------------------------------------------------------------------
             | Comment Moderation
@@ -413,6 +463,32 @@ Route::prefix('v1')->group(function () {
             Route::get('/dashboard/health', [
                 DashboardController::class,
                 'health',
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Admin Profile
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get('/profile', [
+                ProfileController::class,
+                'show',
+            ]);
+
+            Route::put('/profile', [
+                ProfileController::class,
+                'update',
+            ]);
+
+            Route::put('/profile/password', [
+                ProfileController::class,
+                'changePassword',
+            ]);
+
+            Route::post('/profile/avatar', [
+                ProfileController::class,
+                'uploadAvatar',
             ]);
 
             /*

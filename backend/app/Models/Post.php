@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
+use Illuminate\Database\Eloquent\Builder;
 use App\Models\Category;
 use App\Models\User;
 use App\Models\Tag;
@@ -87,6 +87,14 @@ class Post extends Model
             SeoMeta::class,
             'seoable'
         );
+    }
+
+    public function scopePublished(Builder $query): Builder
+    {
+        return $query
+            ->where('status', 'published')
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
     }
 
     /**

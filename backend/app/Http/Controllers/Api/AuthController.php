@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Support\ApiResponse;
 
 class AuthController extends Controller
 {
@@ -58,10 +59,16 @@ class AuthController extends Controller
         );
     }
 
-    public function me(Request $request): UserResource
+    /**
+     * Authenticated user.
+     */
+    public function me(): JsonResponse
     {
-        return new UserResource(
-            $request->user()->load('role')
+        $user = auth()->user()->load('role');
+
+        return ApiResponse::success(
+            UserResource::make($user),
+            'Authenticated user retrieved successfully.'
         );
     }
 

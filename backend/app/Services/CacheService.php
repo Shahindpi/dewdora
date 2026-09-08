@@ -147,6 +147,22 @@ class CacheService
 
     /*
     |--------------------------------------------------------------------------
+    | Site Settings Cache
+    |--------------------------------------------------------------------------
+    */
+
+    public static function siteSettingsKey(): string
+    {
+        return 'public_site_settings';
+    }
+
+    public static function clearSiteSettings(): void
+    {
+        Cache::forget(self::siteSettingsKey());
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | Clear Public Cache
     |--------------------------------------------------------------------------
     */
@@ -166,6 +182,26 @@ class CacheService
 
         Cache::forget(self::publicBrandsKey());
         Cache::forget(self::publicAffiliateNetworksKey());
+
+        Cache::forget(self::siteSettingsKey());
+        Cache::forget(self::publicHomepageKey());
+        
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Homepage Cache
+    |--------------------------------------------------------------------------
+    */
+
+    public static function publicHomepageKey(): string
+    {
+        return 'public_homepage';
+    }
+
+    public static function clearHomepage(): void
+    {
+        Cache::forget(self::publicHomepageKey());
     }
 
     /*
