@@ -16,8 +16,8 @@ export interface DashboardOverview {
     users: number;
   };
 
-  recent_posts: any[];
-  recent_products: any[];
+  recent_posts: import("./post").Post[];
+  recent_products: import("./product").AffiliateProduct[];
 }
 
 export interface PopularPost {

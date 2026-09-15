@@ -57,3 +57,7 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Dewdora API
+
+The versioned API root is `/api/v1`. Public routes live at `/api/v1/public/*`, login at `/api/v1/auth/login`, and authenticated admin routes at `/api/v1/admin/*`. Set the environment's `CORS_ALLOWED_ORIGINS` to the Next.js origin, configure the database, run `composer install`, `php artisan migrate`, and `php artisan storage:link`. Run `composer test` for the backend tests. Publishing a post through the admin API now sets `published_at` if it was omitted; publishing controls public visibility.

@@ -32,7 +32,7 @@ class AffiliateProductController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $cacheKey = 'public_products_' . md5(
+        $cacheKey = 'public_products_' . Cache::get('public_cache_version', 0) . '_' . md5(
             json_encode($request->query())
         );
 
@@ -43,12 +43,14 @@ class AffiliateProductController extends Controller
         */
 
         $products = Cache::remember(
-            CacheService::publicProductsKey(),
+            $cacheKey,
             now()->addHours(6),
-            function () use ($perPage) {
+            function () use ($request, $perPage) {
 
                 return AffiliateProduct::query()
                     ->where('status', true)
+                    ->when($request->filled('brand'), fn ($query) => $query->whereHas('brand', fn ($brand) => $brand->where('slug', $request->input('brand'))))
+                    ->when($request->filled('category'), fn ($query) => $query->whereHas('category', fn ($category) => $category->where('slug', $request->input('category'))))
                     ->with([
                         'brand:id,name,slug,logo',
                         'category:id,name,slug',

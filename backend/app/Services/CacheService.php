@@ -169,6 +169,7 @@ class CacheService
 
     public static function clearPublicCaches(): void
     {
+        Cache::increment('public_cache_version');
         Cache::forget(self::homepageKey());
         
         Cache::forget(self::publicPostsKey());

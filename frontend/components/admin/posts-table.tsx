@@ -50,7 +50,7 @@ export default function PostsTable({ posts }: Props) {
               <TableCell>
                 <div className="space-y-1">
                   <Link
-                    href={`/admin/posts/${post.id}` as any}
+                    href={`/admin/posts/${post.id}`}
                     className="font-medium hover:text-primary"
                   >
                     {post.title}

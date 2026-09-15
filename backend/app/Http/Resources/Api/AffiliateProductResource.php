@@ -26,6 +26,12 @@ class AffiliateProductResource extends JsonResource
 
             'slug' => $this->slug,
 
+            'brand_id' => $this->brand_id,
+            'category_id' => $this->category_id,
+            'affiliate_network_id' => $this->affiliate_network_id,
+            'status' => $this->status,
+            'featured_image_path' => $this->featured_image,
+
             'short_description' => $this->short_description,
 
             'description' => $this->description,

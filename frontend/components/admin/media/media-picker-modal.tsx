@@ -59,7 +59,7 @@ export default function MediaPickerModal({
 
         return [
             image,
-            ...items.filter((item: MediaItem) => item.id !== image.id),
+            ...items.filter((item: MediaItem) => item.path !== image.path),
         ];
         });
 
@@ -71,7 +71,7 @@ export default function MediaPickerModal({
       onClose();
     },
 
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { message?: string } } }) => {
       console.error(error);
 
       toast.error(
@@ -170,7 +170,7 @@ export default function MediaPickerModal({
             {media.length > 0 ? (
                 media.map((image, index) => (
                 <button
-                    key={`${image.id ?? "media"}-${image.url}-${index}`}
+                    key={`${image.path}-${index}`}
                     type="button"
                     className="cursor-pointer overflow-hidden rounded-xl border transition hover:border-primary"
                     onClick={() => {

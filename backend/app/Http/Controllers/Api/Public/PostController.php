@@ -31,7 +31,7 @@ class PostController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $cacheKey = 'public_posts_' . md5(
+        $cacheKey = 'public_posts_' . Cache::get('public_cache_version', 0) . '_' . md5(
             json_encode($request->query())
         );
 
@@ -286,7 +286,7 @@ class PostController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $post->increment('views');
+        Post::whereKey($post->id)->increment('views');
 
         /*
         |--------------------------------------------------------------------------

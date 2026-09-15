@@ -131,6 +131,10 @@ class PostController extends Controller
         $validated['status'] =
             $validated['status'] ?? 'draft';
 
+        if ($validated['status'] === 'published' && empty($validated['published_at'])) {
+            $validated['published_at'] = now();
+        }
+
         $validated['reading_time'] =
             $validated['reading_time'] ?? 1;
 
@@ -321,6 +325,10 @@ class PostController extends Controller
         | Update
         |--------------------------------------------------------------------------
         */
+
+        if (($validated['status'] ?? null) === 'published' && ! $post->published_at && empty($validated['published_at'])) {
+            $validated['published_at'] = now();
+        }
 
         $post->update($validated);
 

@@ -47,7 +47,7 @@ export default function PopularPosts({
       </div>
 
       <Link
-        href={"/admin/posts" as any}
+        href={"/admin/posts"}
         className="mt-6 inline-block text-primary text-sm font-medium"
         >
         View All Posts →

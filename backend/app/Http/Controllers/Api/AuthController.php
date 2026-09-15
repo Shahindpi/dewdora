@@ -21,7 +21,7 @@ class AuthController extends Controller
         if (! Auth::attempt($credentials)) {
             return ApiResponse::error(
                 'Invalid credentials.',
-                401
+                null, 401
             );
         }
 
@@ -33,7 +33,7 @@ class AuthController extends Controller
 
             return ApiResponse::error(
                 'Your account is inactive.',
-                403
+                null, 403
             );
         }
 
@@ -68,11 +68,7 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        Auth::guard('web')->logout();
-
-        $request->session()->invalidate();
-
-        $request->session()->regenerateToken();
+        $request->user()?->currentAccessToken()?->delete();
 
         return response()->json([
             'success' => true,

@@ -23,7 +23,7 @@ class CategoryController extends Controller
             50
         );
 
-        $cacheKey = 'public_categories_' . md5(
+        $cacheKey = 'public_categories_' . Cache::get('public_cache_version', 0) . '_' . md5(
             json_encode($request->query())
         );
 

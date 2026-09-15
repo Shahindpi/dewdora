@@ -24,13 +24,7 @@ interface Props {
   onInsertImage: () => void;
 }
 
-export default function EditorToolbar({
-  editor,
-  onInsertImage,
-}: Props) {
-  if (!editor) return null;
-
-  const ToolbarButton = ({
+const ToolbarButton = ({
     active = false,
     onClick,
     children,
@@ -49,6 +43,14 @@ export default function EditorToolbar({
         {children}
     </Button>
   );
+
+
+export default function EditorToolbar({
+  editor,
+  onInsertImage,
+}: Props) {
+  if (!editor) return null;
+
 
   return (
     <div className="flex flex-wrap gap-2 border-b bg-muted/40 p-3">
