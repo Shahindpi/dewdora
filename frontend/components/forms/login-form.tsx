@@ -47,9 +47,9 @@ export default function LoginForm() {
       toast.success("Welcome back!");
 
       router.replace("/admin" as Route);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(
-        error?.response?.data?.message || "Login failed."
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Login failed."
       );
     } finally {
       setLoading(false);

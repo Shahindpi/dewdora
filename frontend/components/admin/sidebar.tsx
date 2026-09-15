@@ -18,7 +18,6 @@ import {
   ImageIcon,
   Mail,
   MessageSquare,
-  Users,
   Settings,
 } from "lucide-react";
 
@@ -33,7 +32,8 @@ const items = [
   { label: "Media", href: "/admin/media", icon: ImageIcon },
   { label: "Newsletter", href: "/admin/newsletter", icon: Mail },
   { label: "Comments", href: "/admin/comments", icon: MessageSquare },
-  { label: "Users", href: "/admin/users", icon: Users },
+  { label: "Contact", href: "/admin/contact", icon: Mail },
+  { label: "Profile", href: "/admin/profile", icon: Settings },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ] as const;
 
@@ -57,7 +57,7 @@ export default function Sidebar() {
           return (
             <Link
                 key={item.href}
-                href={item.href as any}
+                href={item.href}
                 className={cn(
                     "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
                     active

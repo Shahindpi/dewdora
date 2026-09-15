@@ -334,7 +334,7 @@ class MediaController extends Controller
 
             return ApiResponse::error(
                 'Image not found.',
-                404
+                null, 404
             );
         }
 

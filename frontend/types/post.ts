@@ -16,6 +16,10 @@ export interface Post {
   slug: string;
 
   excerpt?: string;
+  content?: string;
+  category_id?: number | null;
+  post_type?: "article" | "review" | "comparison" | "tutorial" | "news";
+  allow_comments?: boolean;
 
   featured_image?: string;
 

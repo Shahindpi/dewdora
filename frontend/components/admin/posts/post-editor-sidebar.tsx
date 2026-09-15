@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import PostStatusSelect from "./post-status-select";
 import MediaPickerModal from "../media/media-picker-modal";
 
+import { imageUrl } from "@/lib/image";
 import { MediaItem } from "@/types/media";
 
 interface Props {
@@ -42,7 +43,7 @@ export default function PostEditorSidebar({
 
           {featuredImage ? (
             <img
-              src={featuredImage}
+              src={imageUrl(featuredImage)}
               alt="Featured"
               className="h-44 w-full rounded-xl border object-cover"
             />
@@ -88,7 +89,7 @@ export default function PostEditorSidebar({
         open={mediaOpen}
         onClose={() => setMediaOpen(false)}
         onSelect={(image: MediaItem) => {
-          setFeaturedImage?.(image.url);
+          setFeaturedImage?.(image.path);
           setMediaOpen(false);
         }}
       />

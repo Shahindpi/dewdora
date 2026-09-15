@@ -118,7 +118,7 @@ class ProfileController extends Controller
 
             return ApiResponse::error(
                 'Current password is incorrect.',
-                422
+                null, 422
             );
         }
 

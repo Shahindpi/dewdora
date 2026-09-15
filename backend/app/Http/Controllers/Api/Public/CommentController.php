@@ -40,7 +40,7 @@ class CommentController extends Controller
         if (! $post) {
             return ApiResponse::error(
                 'Post not found.',
-                404
+                null, 404
             );
         }
 
@@ -125,7 +125,7 @@ class CommentController extends Controller
 
             return ApiResponse::error(
                 'Post not found.',
-                404
+                null, 404
             );
         }
 
@@ -139,7 +139,7 @@ class CommentController extends Controller
 
             return ApiResponse::error(
                 'Comments are disabled for this post.',
-                403
+                null, 403
             );
         }
 
@@ -159,7 +159,7 @@ class CommentController extends Controller
 
                 return ApiResponse::error(
                     'Invalid parent comment.',
-                    422
+                    null, 422
                 );
             }
         }

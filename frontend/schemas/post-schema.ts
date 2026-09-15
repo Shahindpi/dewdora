@@ -29,13 +29,13 @@ export const postSchema = z.object({
     "article",
     "tutorial",
     "review",
-    "resource",
+    "comparison",
     "news",
   ]),
 
   allow_comments: z.boolean(),
 
-  category_id: z.number().min(1, "Please select a category."),
+  category_id: z.number().min(0),
 });
 
 export type PostFormValues = z.infer<typeof postSchema>;

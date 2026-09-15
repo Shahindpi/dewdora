@@ -29,7 +29,7 @@ class TagController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $cacheKey = 'public_tags_' . md5(
+        $cacheKey = 'public_tags_' . Cache::get('public_cache_version', 0) . '_' . md5(
             json_encode($request->query())
         );
 

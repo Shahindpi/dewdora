@@ -129,7 +129,7 @@ class NewsletterController extends Controller
 
             return ApiResponse::error(
                 'Subscriber not found.',
-                404
+                null, 404
             );
         }
 

@@ -19,9 +19,9 @@ export async function getProducts(params?: {
 }
 
 export async function getProduct(slug: string) {
-  const response = await api.get<ApiResponse<AffiliateProduct>>(
+  const response = await api.get<ApiResponse<{ product: AffiliateProduct }>>(
     `/public/products/${slug}`
   );
 
-  return response.data.data;
+  return response.data.data.product;
 }

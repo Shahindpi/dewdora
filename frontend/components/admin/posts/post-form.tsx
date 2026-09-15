@@ -11,6 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import {
   useMutation,
+  useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
 
@@ -25,6 +26,9 @@ import {
   postSchema,
   PostFormValues,
 } from "@/schemas/post-schema";
+
+import api from "@/lib/axios";
+import { getCategories } from "@/services/categories";
 
 import {
   createPost,
@@ -42,6 +46,8 @@ interface Props {
   post?: Partial<PostFormValues> & {
     id?: number;
     featured_image?: string | null;
+    tags?: { id: number; name: string }[];
+    seo?: { meta_title?: string; meta_description?: string; canonical_url?: string };
   };
 }
 
@@ -57,6 +63,12 @@ export default function PostForm({
   | Featured Image
   |--------------------------------------------------------------------------
   */
+
+  const [tagIds, setTagIds] = useState<number[]>(post?.tags?.map(tag => tag.id) || []);
+  const [seoTitle, setSeoTitle] = useState(post?.seo?.meta_title || "");
+  const [seoDescription, setSeoDescription] = useState(post?.seo?.meta_description || "");
+  const [canonicalUrl, setCanonicalUrl] = useState(post?.seo?.canonical_url || "");
+  const { data: availableTags = [] } = useQuery({ queryKey: ["post-tags"], queryFn: async () => (await api.get("/admin/tags", { params: { per_page: 50 } })).data.data as { id: number; name: string }[] });
 
   const [featuredImage, setFeaturedImage] =
     useState<string | null>(
@@ -91,9 +103,11 @@ export default function PostForm({
       status: "draft",
       post_type: "article",
       allow_comments: true,
-      category_id: 1,
+      category_id: 0,
     },
   });
+
+  const { data: categories = [] } = useQuery({ queryKey: ["post-categories"], queryFn: getCategories });
 
   const title = watch("title");
   const slug = watch("slug");
@@ -120,12 +134,14 @@ export default function PostForm({
       allow_comments:
         post.allow_comments ?? true,
       category_id:
-        post.category_id ?? 1,
+        post.category_id ?? 0,
     });
 
-    setFeaturedImage(
-      post.featured_image ?? null
-    );
+    setFeaturedImage(post.featured_image ?? null);
+    setTagIds(post.tags?.map(tag => tag.id) || []);
+    setSeoTitle(post.seo?.meta_title || "");
+    setSeoDescription(post.seo?.meta_description || "");
+    setCanonicalUrl(post.seo?.canonical_url || "");
   }, [
     mode,
     post,
@@ -178,6 +194,7 @@ export default function PostForm({
     ) => {
       const payload = {
         ...values,
+        category_id: values.category_id || null,
         featured_image: featuredImage,
       };
 
@@ -186,26 +203,14 @@ export default function PostForm({
         payload
       );
 
-      if (
-        mode === "edit" &&
-        post?.id
-      ) {
-        console.log(
-          "POST FORM -> UPDATING POST:",
-          post.id
-        );
-
-        return updatePost(
-          post.id,
-          payload
-        );
+      const saved = mode === "edit" && post?.id ? await updatePost(post.id, payload) : await createPost(payload);
+      if (saved?.id) {
+        await api.put(`/admin/posts/${saved.id}/tags`, { tag_ids: tagIds });
+        if (seoTitle || seoDescription || canonicalUrl) {
+          await api.put(`/admin/posts/${saved.id}/seo`, { meta_title: seoTitle || null, meta_description: seoDescription || null, canonical_url: canonicalUrl || null });
+        }
       }
-
-      console.log(
-        "POST FORM -> CREATING POST"
-      );
-
-      return createPost(payload);
+      return saved;
     },
 
     onSuccess: async () => {
@@ -224,11 +229,11 @@ export default function PostForm({
       );
 
       router.push(
-        "/admin/posts" as any
+        "/admin/posts"
       );
     },
 
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { message?: string } }; message?: string }) => {
       console.error(
         "POST FORM -> SAVE ERROR:",
         error
@@ -408,6 +413,9 @@ export default function PostForm({
           )}
         </div>
 
+        <div className="space-y-2"><label htmlFor="category_id" className="text-sm font-medium">Category</label><select id="category_id" {...register("category_id", { valueAsNumber: true })} className="w-full rounded-lg border p-3"><option value="0">No category</option>{categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select></div>
+        <div className="space-y-2"><label htmlFor="post_type" className="text-sm font-medium">Post type</label><select id="post_type" {...register("post_type")} className="w-full rounded-lg border p-3">{["article", "review", "comparison", "tutorial", "news"].map(type => <option key={type} value={type}>{type}</option>)}</select></div>
+
         {/* Content */}
         <div className="space-y-2">
           <label className="text-sm font-medium">
@@ -431,6 +439,9 @@ export default function PostForm({
             </p>
           )}
         </div>
+
+        <div className="space-y-3"><h3 className="text-sm font-medium">Tags</h3><div className="flex flex-wrap gap-3">{availableTags.map(tag => <label key={tag.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={tagIds.includes(tag.id)} onChange={e => setTagIds(ids => e.target.checked ? [...ids, tag.id] : ids.filter(id => id !== tag.id))} />{tag.name}</label>)}</div></div>
+        <div className="space-y-3 rounded-xl border p-4"><h3 className="font-semibold">Search metadata</h3><label className="block text-sm">Meta title<input value={seoTitle} onChange={e => setSeoTitle(e.target.value)} maxLength={255} className="mt-2 w-full rounded-lg border p-3" /></label><label className="block text-sm">Meta description<textarea value={seoDescription} onChange={e => setSeoDescription(e.target.value)} maxLength={500} rows={3} className="mt-2 w-full rounded-lg border p-3" /></label><label className="block text-sm">Canonical URL<input type="url" value={canonicalUrl} onChange={e => setCanonicalUrl(e.target.value)} className="mt-2 w-full rounded-lg border p-3" /></label></div>
 
         {/* Allow Comments */}
         <div className="flex items-center gap-3 rounded-xl border p-4">

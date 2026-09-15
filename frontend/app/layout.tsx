@@ -1,4 +1,6 @@
 import "./globals.css";
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: { default: "Dewdora", template: "%s | Dewdora" }, description: "Explore useful articles and products curated by Dewdora." };
 
 import { ThemeProvider } from "@/providers/theme-provider";
 import { QueryProvider } from "@/providers/query-provider";

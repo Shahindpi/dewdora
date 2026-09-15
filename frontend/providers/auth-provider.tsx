@@ -12,7 +12,6 @@ import { AuthContext } from "@/contexts/auth-context";
 
 import {
   clearAuthStorage,
-  getStoredUser,
   getToken,
   setStoredUser,
   setToken,
@@ -62,7 +61,7 @@ export function AuthProvider({
  const login = useCallback(async (email: string, password: string) => {
   const response = await loginRequest({ email, password });
 
-  console.log("Login response:", response);
+
 
   setToken(response.token);
   setStoredUser(response.user);
@@ -81,13 +80,7 @@ export function AuthProvider({
     }, []);
 
     useEffect(() => {
-    const storedUser = getStoredUser();
-
-    if (storedUser) {
-      setUser(storedUser);
-    }
-
-    refreshUser();
+    void Promise.resolve().then(refreshUser);
   }, [refreshUser]);
 
   const value = useMemo(

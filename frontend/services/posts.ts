@@ -18,7 +18,8 @@ interface PostFilters {
 |--------------------------------------------------------------------------
 */
 
-export type PostPayload = PostFormValues & {
+export type PostPayload = Omit<PostFormValues, "category_id"> & {
+  category_id: number | null;
   featured_image?: string | null;
 };
 

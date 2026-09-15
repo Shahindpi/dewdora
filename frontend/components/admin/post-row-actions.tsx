@@ -59,7 +59,7 @@ export default function PostRowActions({
 
         <DropdownMenuContent align="end">
           <DropdownMenuItem
-            onClick={() => router.push(`/admin/posts/${id}` as any)}
+            onClick={() => router.push(`/admin/posts/${id}`)}
           >
             <Pencil className="h-4 w-4" />
             Edit

@@ -14,12 +14,11 @@ import {
   MessageSquare,
   Mail,
   Eye,
-  HardDrive,
 } from "lucide-react";
 
 import {
-  getDashboardAnalytics,
   getDashboardOverview,
+  getDashboardPopularPosts,
 } from "@/services/dashboard";
 
 export default function DashboardPage() {
@@ -28,9 +27,9 @@ export default function DashboardPage() {
     queryFn: getDashboardOverview,
   });
 
-  const { data: analytics } = useQuery({
-    queryKey: ["dashboard-analytics"],
-    queryFn: getDashboardAnalytics,
+  const { data: popularPosts } = useQuery({
+    queryKey: ["dashboard-popular-posts"],
+    queryFn: getDashboardPopularPosts,
   });
 
   if (isLoading || !overview) {
@@ -118,8 +117,8 @@ export default function DashboardPage() {
         />
       </div>
 
-      {analytics?.popular_posts && (
-        <PopularPosts posts={analytics.popular_posts} />
+      {popularPosts?.length && (
+        <PopularPosts posts={popularPosts} />
       )}
     </main>
   );

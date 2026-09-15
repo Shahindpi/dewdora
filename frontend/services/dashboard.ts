@@ -21,3 +21,7 @@ export async function getDashboardAnalytics() {
 
   return response.data.data;
 }
+export async function getDashboardPopularPosts() {
+  const response = await api.get<ApiResponse<import("@/types/dashboard").PopularPost[]>>("/admin/dashboard/popular-posts");
+  return response.data.data;
+}
