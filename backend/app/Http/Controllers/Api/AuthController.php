@@ -10,52 +10,46 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use App\Support\ApiResponse;
+use App\Http\Requests\Auth\LoginRequest;
 
 class AuthController extends Controller
 {
-    public function login(Request $request): JsonResponse|UserResource
+    public function login(LoginRequest $request): JsonResponse
     {
-        $credentials = $request->validate([
-            'email' => [
-                'required',
-                'email',
-            ],
+        $credentials = $request->validated();
 
-            'password' => [
-                'required',
-                'string',
-            ],
-        ]);
-
-        $user = \App\Models\User::with('role')
-            ->where('email', $credentials['email'])
-            ->first();
-
-        if (
-            ! $user ||
-            ! Hash::check($credentials['password'], $user->password)
-        ) {
-            throw ValidationException::withMessages([
-                'email' => [
-                    'The provided credentials are incorrect.',
-                ],
-            ]);
+        if (! Auth::attempt($credentials)) {
+            return ApiResponse::error(
+                'Invalid credentials.',
+                401
+            );
         }
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
 
         if (! $user->status) {
-            throw ValidationException::withMessages([
-                'email' => [
-                    'Your account is inactive.',
-                ],
-            ]);
+            Auth::logout();
+
+            return ApiResponse::error(
+                'Your account is inactive.',
+                403
+            );
         }
 
-        Auth::login($user, true);
+        // Remove previous tokens (optional but recommended)
+        $user->tokens()->delete();
 
-        $request->session()->regenerate();
+        $token = $user->createToken('dewdora-admin')->plainTextToken;
 
-        return new UserResource(
-            $user->load('role')
+        return ApiResponse::success(
+            [
+                'token' => $token,
+                'user'  => new UserResource(
+                    $user->load('role')
+                ),
+            ],
+            'Login successful.'
         );
     }
 

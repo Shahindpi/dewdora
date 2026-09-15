@@ -45,10 +45,6 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Session\Middleware\StartSession::class,
         ]);
 
-        $middleware->append(
-            \App\Http\Middleware\SecurityHeadersMiddleware::class
-        );
-
         $middleware->alias([
             'admin' => AdminMiddleware::class,
         ]);

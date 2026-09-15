@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 
 use Illuminate\Http\JsonResponse;
@@ -14,6 +15,7 @@ use App\Models\AffiliateProduct;
 use App\Models\Brand;
 use App\Models\AffiliateNetwork;
 use App\Models\User;
+
 
 use App\Http\Resources\Api\PostResource;
 use App\Http\Resources\Api\AffiliateProductResource;
