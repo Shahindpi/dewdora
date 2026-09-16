@@ -47,6 +47,7 @@ class UpdateBrandRequest extends FormRequest
                 'nullable',
                 'string',
             ],
+            'status' => ['nullable', 'boolean'],
         ];
     }
 }

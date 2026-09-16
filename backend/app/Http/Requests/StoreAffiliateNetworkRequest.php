@@ -39,6 +39,7 @@ class StoreAffiliateNetworkRequest extends FormRequest
                 'nullable',
                 'string',
             ],
+            'status' => ['nullable', 'boolean'],
         ];
     }
 }

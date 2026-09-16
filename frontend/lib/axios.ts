@@ -43,8 +43,7 @@ api.interceptors.response.use(
       error.response?.status === 401
     ) {
       clearAuthStorage();
-
-      window.location.href = "/auth/login";
+      window.dispatchEvent(new Event("dewdora:unauthorized"));
     }
 
     return Promise.reject(error);

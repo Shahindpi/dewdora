@@ -9,7 +9,7 @@ interface PostFilters {
   page?: number;
   search?: string;
   status?: string;
-  category?: string;
+  category_id?: number;
 }
 
 /*

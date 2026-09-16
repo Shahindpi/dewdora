@@ -3,8 +3,8 @@ import type { AffiliateProduct } from "@/types/product";
 import type { Category } from "@/types/category";
 import type { ApiResponse, PaginationMeta } from "@/types/api";
 
-export type PublicPost = Post & { content?: string; reading_time?: number; allow_comments?: boolean; seo?: { meta_title?: string; meta_description?: string }; affiliate_products?: PublicProduct[] };
-export type PublicProduct = AffiliateProduct & { description?: string; affiliate_url?: string; website_url?: string; pros?: string[]; cons?: string[]; free_trial?: boolean; seo?: { meta_title?: string; meta_description?: string } };
+export type PublicPost = Post & { content?: string; reading_time?: number; allow_comments?: boolean; author?: { id: number; name: string } | null; seo?: { meta_title?: string; meta_description?: string; canonical_url?: string; open_graph?: { image?: string }; overrides?: { meta_title?: string | null; meta_description?: string | null; canonical_url?: string | null }; has_overrides?: boolean }; affiliate_products?: PublicProduct[] };
+export type PublicProduct = AffiliateProduct & { description?: string; affiliate_url?: string; website_url?: string; pros?: string[]; cons?: string[]; free_trial?: boolean; seo?: { meta_title?: string; meta_description?: string; canonical_url?: string; open_graph?: { image?: string } } };
 export type PublicCategory = Category & { description?: string; posts_count?: number };
 export type ListResult<T> = { data: T[]; meta?: PaginationMeta };
 

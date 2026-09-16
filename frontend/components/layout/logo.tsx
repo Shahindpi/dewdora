@@ -1,22 +1,20 @@
 "use client";
 
 import Image from "next/image";
-import { imageUrl } from "@/lib/image";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getSettings } from "@/services/settings";
 
 export default function Logo() {
+  const [imageFailed, setImageFailed] = useState(false);
+  const { data: settings } = useQuery({ queryKey: ["public-settings"], queryFn: getSettings, staleTime: 1000 * 60 * 30 });
   return (
     <div className="flex items-center gap-3">
-      <Image
-        src={imageUrl("uploads/settings/81d90c73-57f4-44f1-97b5-0950c07e45c1.png")}
-        alt="Dewdora"
-        width={36}
-        height={36}
-        unoptimized
-      />
+      {settings?.logo && !imageFailed ? <Image src={settings.logo} alt={`${settings.site_name || "Dewdora"} logo`} width={40} height={40} unoptimized onError={() => setImageFailed(true)} /> : <span aria-hidden className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-700 font-black text-white">D</span>}
 
       <div>
         <h1 className="text-lg font-bold leading-none">
-          Dewdora
+          {settings?.site_name || "Dewdora"}
         </h1>
 
         <p className="text-xs text-muted-foreground">

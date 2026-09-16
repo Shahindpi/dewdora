@@ -7,6 +7,7 @@ use App\Models\Brand;
 use Illuminate\Http\Request;
 
 use App\Http\Resources\Api\BrandResource;
+use App\Http\Resources\Api\AffiliateProductResource;
 use App\Support\ApiResponse;
 use App\Services\CacheService;
 
@@ -32,6 +33,7 @@ class BrandController extends Controller
             function () use ($request, $perPage) {
 
                 $brands = Brand::query()
+                    ->where('status', true)
                     ->withCount('affiliateProducts')
 
                     ->when(
@@ -74,12 +76,23 @@ class BrandController extends Controller
             function () use ($slug) {
 
                 $brand = Brand::query()
-                    ->withCount('affiliateProducts')
+                    ->where('status', true)
+                    ->withCount(['affiliateProducts' => fn ($query) => $query->where('status', true)])
                     ->where('slug', $slug)
                     ->firstOrFail();
 
+                $products = $brand->affiliateProducts()
+                    ->where('status', true)
+                    ->with(['brand', 'affiliateNetwork', 'category', 'seoMeta'])
+                    ->orderByDesc('featured')
+                    ->latest()
+                    ->paginate(12);
+
                 return ApiResponse::success(
-                    new BrandResource($brand),
+                    [
+                        'brand' => new BrandResource($brand),
+                        'products' => AffiliateProductResource::collection($products),
+                    ],
                     'Brand retrieved successfully.'
                 );
             }

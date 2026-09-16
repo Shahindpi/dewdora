@@ -20,6 +20,7 @@ class StoreCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'parent_id' => ['nullable', 'integer', 'exists:categories,id'],
             'name' => [
                 'required',
                 'string',
@@ -37,6 +38,9 @@ class StoreCategoryRequest extends FormRequest
                 'nullable',
                 'string',
             ],
+            'image' => ['nullable', 'string', 'max:255'],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
+            'status' => ['nullable', 'boolean'],
         ];
     }
 }

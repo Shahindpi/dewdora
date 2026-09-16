@@ -22,6 +22,13 @@ class Role extends Model
 
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'status' => 'boolean',
+        ];
+    }
+
     public function users(): HasMany
     {
         return $this->hasMany(User::class);

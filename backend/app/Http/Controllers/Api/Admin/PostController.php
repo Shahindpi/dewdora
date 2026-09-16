@@ -75,6 +75,10 @@ class PostController extends Controller
             );
         }
 
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->integer('category_id'));
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Pagination

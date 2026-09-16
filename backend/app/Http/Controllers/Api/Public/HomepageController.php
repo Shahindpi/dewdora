@@ -57,9 +57,10 @@ class HomepageController extends Controller
                 */
 
                 $popularPosts = Post::query()
-                    ->where('status', 'published')
+                    ->published()
                     ->with([
                         'category',
+                        'user',
                         'tags',
                         'seoMeta.seoable',
                     ])
@@ -75,9 +76,10 @@ class HomepageController extends Controller
                 */
 
                 $latestPosts = Post::query()
-                    ->where('status', 'published')
+                    ->published()
                     ->with([
                         'category',
+                        'user',
                         'tags',
                         'seoMeta.seoable',
                     ])
@@ -92,7 +94,8 @@ class HomepageController extends Controller
                 */
 
                 $categories = Category::query()
-                    ->withCount('posts')
+                    ->where('status', true)
+                    ->withCount(['posts' => fn ($query) => $query->published()])
                     ->orderByDesc('posts_count')
                     ->limit(6)
                     ->get();
@@ -117,7 +120,7 @@ class HomepageController extends Controller
                 */
 
                 $statistics = [
-                    'posts' => Post::where('status', 'published')->count(),
+                    'posts' => Post::published()->count(),
                     'products' => AffiliateProduct::where('status', true)->count(),
                     'categories' => Category::count(),
                     'brands' => Brand::where('status', true)->count(),

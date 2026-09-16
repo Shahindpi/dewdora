@@ -44,6 +44,7 @@ class StoreBrandRequest extends FormRequest
                 'nullable',
                 'string',
             ],
+            'status' => ['nullable', 'boolean'],
         ];
     }
 }

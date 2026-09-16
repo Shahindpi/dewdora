@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 
@@ -32,9 +33,7 @@ export default function PostEditorSidebar({
         {/* Featured Image */}
         <div className="rounded-2xl border bg-background p-5 space-y-4">
           <div>
-            <h3 className="font-semibold">
-              Featured Image
-            </h3>
+            <h3 className="font-semibold">Featured Image</h3>
 
             <p className="text-sm text-muted-foreground">
               Choose an image for this post.
@@ -42,7 +41,10 @@ export default function PostEditorSidebar({
           </div>
 
           {featuredImage ? (
-            <img
+            <Image
+              unoptimized
+              width={640}
+              height={352}
               src={imageUrl(featuredImage)}
               alt="Featured"
               className="h-44 w-full rounded-xl border object-cover"
@@ -59,28 +61,21 @@ export default function PostEditorSidebar({
             className="w-full"
             onClick={() => setMediaOpen(true)}
           >
-            {featuredImage
-              ? "Change Featured Image"
-              : "Select Featured Image"}
+            {featuredImage ? "Change Featured Image" : "Select Featured Image"}
           </Button>
         </div>
 
         {/* Publishing */}
         <div className="rounded-2xl border bg-background p-5 space-y-4">
           <div>
-            <h3 className="font-semibold">
-              Publishing
-            </h3>
+            <h3 className="font-semibold">Publishing</h3>
 
             <p className="text-sm text-muted-foreground">
               Configure post visibility.
             </p>
           </div>
 
-          <PostStatusSelect
-            value={status}
-            onChange={setStatus}
-          />
+          <PostStatusSelect value={status} onChange={setStatus} />
         </div>
       </aside>
 

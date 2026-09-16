@@ -5,9 +5,10 @@ import Sidebar from "@/components/admin/sidebar";
 import AdminHeader from "@/components/admin/header";
 import { useAuth } from "@/hooks/use-auth";
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
- const router = useRouter(); const { authenticated, loading } = useAuth();
+ const router = useRouter(); const { authenticated, loading, user } = useAuth();
  useEffect(() => { if (!loading && !authenticated) router.replace("/auth/login"); }, [authenticated, loading, router]);
  if (loading) return <div className="flex min-h-screen items-center justify-center">Loading dashboard…</div>;
  if (!authenticated) return null;
+ if (user?.role?.slug !== "admin") return <div className="grid min-h-screen place-items-center p-6"><div className="max-w-md text-center"><h1 className="text-2xl font-bold">Administrator access required</h1><p className="mt-3 text-muted-foreground">Your account is signed in, but this CMS is restricted to administrators.</p></div></div>;
  return <div className="flex min-h-screen bg-muted/30"><Sidebar /><div className="flex flex-1 flex-col"><AdminHeader /><main className="p-6">{children}</main></div></div>;
 }

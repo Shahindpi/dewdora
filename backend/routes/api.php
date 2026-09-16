@@ -18,6 +18,8 @@ use App\Http\Controllers\Api\Admin\ContactMessageController;
 use App\Http\Controllers\Api\Admin\CommentController as AdminCommentController;
 use App\Http\Controllers\Api\Admin\ProfileController;
 use App\Http\Controllers\Api\Admin\SiteSettingController;
+use App\Http\Controllers\Api\Admin\UserController;
+use App\Http\Controllers\Api\Admin\RoleController;
 
 use App\Http\Controllers\Api\Public\AffiliateNetworkController as PublicAffiliateNetworkController;
 use App\Http\Controllers\Api\Public\BrandController as PublicBrandController;
@@ -490,6 +492,10 @@ Route::prefix('v1')->group(function () {
                 ProfileController::class,
                 'uploadAvatar',
             ]);
+
+            Route::put('/users/{user}/password', [UserController::class, 'resetPassword']);
+            Route::apiResource('users', UserController::class);
+            Route::apiResource('roles', RoleController::class);
 
             /*
             |--------------------------------------------------------------------------

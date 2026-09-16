@@ -19,6 +19,8 @@ import {
   Mail,
   MessageSquare,
   Settings,
+  Users,
+  ShieldCheck,
 } from "lucide-react";
 
 const items = [
@@ -30,23 +32,25 @@ const items = [
   { label: "Brands", href: "/admin/brands", icon: Building2 },
   { label: "Networks", href: "/admin/networks", icon: BadgeDollarSign },
   { label: "Media", href: "/admin/media", icon: ImageIcon },
-  { label: "Newsletter", href: "/admin/newsletter", icon: Mail },
+  { label: "Subscribers", href: "/admin/subscribers", icon: Mail },
   { label: "Comments", href: "/admin/comments", icon: MessageSquare },
-  { label: "Contact", href: "/admin/contact", icon: Mail },
+  { label: "Contacts", href: "/admin/contacts", icon: Mail },
+  { label: "Users", href: "/admin/users", icon: Users },
+  { label: "Roles", href: "/admin/roles", icon: ShieldCheck },
   { label: "Profile", href: "/admin/profile", icon: Settings },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ] as const;
 
-export default function Sidebar() {
+export default function Sidebar({ mobile = false }: { mobile?: boolean }) {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:flex w-72 border-r bg-background h-screen flex-col sticky top-0">
+    <aside className={`${mobile ? "flex w-full" : "hidden w-72 md:flex"} border-r bg-background h-screen flex-col sticky top-0`}>
       <div className="p-6">
         <Logo />
       </div>
 
-      <nav className="flex-1 px-3 space-y-1">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-5">
         {items.map((item) => {
           const Icon = item.icon;
 

@@ -34,6 +34,8 @@ class SeoMetaController extends Controller
             $validated
         );
 
+        CacheService::clearPost($post->slug);
+
 
         return ApiResponse::success(
             $seoMeta,
@@ -129,6 +131,8 @@ class SeoMetaController extends Controller
                 ],
                 $validated
             );
+
+        CacheService::clearProduct($affiliateProduct->slug);
 
 
         return ApiResponse::success(

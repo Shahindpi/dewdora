@@ -196,10 +196,10 @@ class AffiliateProductController extends Controller
             'seoMeta',
         ]);
 
-        return response()->json([
-            'success' => true,
-            'data' => $affiliateProduct,
-        ]);
+        return ApiResponse::success(
+            new AffiliateProductResource($affiliateProduct),
+            'Affiliate product retrieved successfully.'
+        );
     }
 
 
@@ -261,6 +261,7 @@ class AffiliateProductController extends Controller
             'brand',
             'affiliateNetwork',
             'category',
+            'seoMeta',
         ]);
 
         /*
@@ -272,11 +273,10 @@ class AffiliateProductController extends Controller
         CacheService::clearProduct($oldSlug);
         CacheService::clearProduct($affiliateProduct->slug);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Affiliate product updated successfully.',
-            'data' => $affiliateProduct,
-        ]);
+        return ApiResponse::success(
+            new AffiliateProductResource($affiliateProduct),
+            'Affiliate product updated successfully.'
+        );
     }
 
     /**
@@ -292,7 +292,9 @@ class AffiliateProductController extends Controller
         |--------------------------------------------------------------------------
         */
 
+        $slug = $affiliateProduct->slug;
         $affiliateProduct->delete();
+        CacheService::clearProduct($slug);
 
         return response()->json([
             'success' => true,

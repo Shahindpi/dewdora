@@ -1,8 +1,7 @@
 "use client";
 
-import { Bell, Search } from "lucide-react";
-
-import { Input } from "@/components/ui/input";
+import { ExternalLink, Menu } from "lucide-react";
+import Link from "next/link";
 import {
   Avatar,
   AvatarFallback,
@@ -10,23 +9,30 @@ import {
 } from "@/components/ui/avatar";
 
 import { useAuth } from "@/hooks/use-auth";
+import Sidebar from "@/components/admin/sidebar";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function AdminHeader() {
   const { user } = useAuth();
 
   return (
     <header className="h-16 border-b bg-background px-6 flex items-center justify-between">
-      <div className="relative hidden md:block w-80">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+      <Sheet>
+        <SheetTrigger className="mr-3 rounded-lg border p-2 md:hidden" aria-label="Open admin navigation">
+          <Menu className="h-5 w-5" />
+        </SheetTrigger>
+        <SheetContent side="left" className="w-80 p-0">
+          <Sidebar mobile />
+        </SheetContent>
+      </Sheet>
 
-        <Input
-          placeholder="Search posts, products..."
-          className="pl-10"
-        />
-      </div>
-
-      <div className="flex items-center gap-5 ml-auto">
-        <Bell className="h-5 w-5 cursor-pointer" />
+      <div className="ml-auto flex items-center gap-3 sm:gap-5">
+        <Link href="/" target="_blank" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "hidden sm:inline-flex")}>
+          View site
+          <ExternalLink className="ml-2 h-4 w-4" />
+        </Link>
 
         <div className="flex items-center gap-3">
           <Avatar>

@@ -2,18 +2,11 @@
 
 import { useEffect, useState } from "react";
 import slugify from "slugify";
-import {
-  Controller,
-  useForm,
-} from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -22,18 +15,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
-import {
-  postSchema,
-  PostFormValues,
-} from "@/schemas/post-schema";
+import { postSchema, PostFormValues } from "@/schemas/post-schema";
 
 import api from "@/lib/axios";
 import { getCategories } from "@/services/categories";
 
-import {
-  createPost,
-  updatePost,
-} from "@/services/posts";
+import { createPost, updatePost } from "@/services/posts";
 
 import PostSlugInput from "./post-slug-input";
 import PostEditorSidebar from "./post-editor-sidebar";
@@ -46,15 +33,24 @@ interface Props {
   post?: Partial<PostFormValues> & {
     id?: number;
     featured_image?: string | null;
+    featured_image_path?: string | null;
     tags?: { id: number; name: string }[];
-    seo?: { meta_title?: string; meta_description?: string; canonical_url?: string };
+    seo?: {
+      meta_title?: string;
+      meta_description?: string;
+      canonical_url?: string;
+      overrides?: {
+        meta_title?: string | null;
+        meta_description?: string | null;
+        canonical_url?: string | null;
+        og_image?: string | null;
+      };
+      has_overrides?: boolean;
+    };
   };
 }
 
-export default function PostForm({
-  mode,
-  post,
-}: Props) {
+export default function PostForm({ mode, post }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -64,16 +60,31 @@ export default function PostForm({
   |--------------------------------------------------------------------------
   */
 
-  const [tagIds, setTagIds] = useState<number[]>(post?.tags?.map(tag => tag.id) || []);
-  const [seoTitle, setSeoTitle] = useState(post?.seo?.meta_title || "");
-  const [seoDescription, setSeoDescription] = useState(post?.seo?.meta_description || "");
-  const [canonicalUrl, setCanonicalUrl] = useState(post?.seo?.canonical_url || "");
-  const { data: availableTags = [] } = useQuery({ queryKey: ["post-tags"], queryFn: async () => (await api.get("/admin/tags", { params: { per_page: 50 } })).data.data as { id: number; name: string }[] });
+  const [tagIds, setTagIds] = useState<number[]>(
+    post?.tags?.map((tag) => tag.id) || [],
+  );
+  const [seoTitle, setSeoTitle] = useState(
+    post?.seo?.overrides?.meta_title || "",
+  );
+  const [seoDescription, setSeoDescription] = useState(
+    post?.seo?.overrides?.meta_description || "",
+  );
+  const [canonicalUrl, setCanonicalUrl] = useState(
+    post?.seo?.overrides?.canonical_url || "",
+  );
+  const [socialImage, setSocialImage] = useState(
+    post?.seo?.overrides?.og_image || "",
+  );
+  const { data: availableTags = [] } = useQuery({
+    queryKey: ["post-tags"],
+    queryFn: async () =>
+      (await api.get("/admin/tags", { params: { per_page: 50 } })).data
+        .data as { id: number; name: string }[],
+  });
 
-  const [featuredImage, setFeaturedImage] =
-    useState<string | null>(
-      post?.featured_image ?? null
-    );
+  const [featuredImage, setFeaturedImage] = useState<string | null>(
+    post?.featured_image_path ?? post?.featured_image ?? null,
+  );
 
   /*
   |--------------------------------------------------------------------------
@@ -85,68 +96,31 @@ export default function PostForm({
     register,
     control,
     handleSubmit,
-    watch,
     setValue,
-    reset,
-    formState: {
-      errors,
-      isSubmitting,
-    },
+    formState: { errors, isSubmitting },
   } = useForm<PostFormValues>({
     resolver: zodResolver(postSchema),
 
     defaultValues: {
-      title: "",
-      slug: "",
-      excerpt: "",
-      content: "",
-      status: "draft",
-      post_type: "article",
-      allow_comments: true,
-      category_id: 0,
+      title: post?.title ?? "",
+      slug: post?.slug ?? "",
+      excerpt: post?.excerpt ?? "",
+      content: post?.content ?? "",
+      status: post?.status ?? "draft",
+      post_type: post?.post_type ?? "article",
+      allow_comments: post?.allow_comments ?? true,
+      category_id: post?.category_id ?? 0,
     },
   });
 
-  const { data: categories = [] } = useQuery({ queryKey: ["post-categories"], queryFn: getCategories });
+  const { data: categories = [] } = useQuery({
+    queryKey: ["post-categories"],
+    queryFn: getCategories,
+  });
 
-  const title = watch("title");
-  const slug = watch("slug");
-  const status = watch("status");
-
-  /*
-  |--------------------------------------------------------------------------
-  | Populate Form In Edit Mode
-  |--------------------------------------------------------------------------
-  */
-
-  useEffect(() => {
-    if (mode !== "edit" || !post) {
-      return;
-    }
-
-    reset({
-      title: post.title ?? "",
-      slug: post.slug ?? "",
-      excerpt: post.excerpt ?? "",
-      content: post.content ?? "",
-      status: post.status ?? "draft",
-      post_type: post.post_type ?? "article",
-      allow_comments:
-        post.allow_comments ?? true,
-      category_id:
-        post.category_id ?? 0,
-    });
-
-    setFeaturedImage(post.featured_image ?? null);
-    setTagIds(post.tags?.map(tag => tag.id) || []);
-    setSeoTitle(post.seo?.meta_title || "");
-    setSeoDescription(post.seo?.meta_description || "");
-    setCanonicalUrl(post.seo?.canonical_url || "");
-  }, [
-    mode,
-    post,
-    reset,
-  ]);
+  const title = useWatch({ control, name: "title" });
+  const slug = useWatch({ control, name: "slug" });
+  const status = useWatch({ control, name: "status" });
 
   /*
   |--------------------------------------------------------------------------
@@ -159,28 +133,17 @@ export default function PostForm({
       return;
     }
 
-    const generatedSlug = slugify(
-      title || "",
-      {
-        lower: true,
-        strict: true,
-      }
-    );
+    const generatedSlug = slugify(title || "", {
+      lower: true,
+      strict: true,
+    });
 
-    setValue(
-      "slug",
-      generatedSlug,
-      {
-        shouldDirty: true,
-        shouldTouch: true,
-        shouldValidate: true,
-      }
-    );
-  }, [
-    title,
-    mode,
-    setValue,
-  ]);
+    setValue("slug", generatedSlug, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+  }, [title, mode, setValue]);
 
   /*
   |--------------------------------------------------------------------------
@@ -189,35 +152,34 @@ export default function PostForm({
   */
 
   const mutation = useMutation({
-    mutationFn: async (
-      values: PostFormValues
-    ) => {
+    mutationFn: async (values: PostFormValues) => {
       const payload = {
         ...values,
         category_id: values.category_id || null,
         featured_image: featuredImage,
       };
 
-      console.log(
-        "POST FORM -> API PAYLOAD:",
-        payload
-      );
-
-      const saved = mode === "edit" && post?.id ? await updatePost(post.id, payload) : await createPost(payload);
+      const saved =
+        mode === "edit" && post?.id
+          ? await updatePost(post.id, payload)
+          : await createPost(payload);
       if (saved?.id) {
         await api.put(`/admin/posts/${saved.id}/tags`, { tag_ids: tagIds });
-        if (seoTitle || seoDescription || canonicalUrl) {
-          await api.put(`/admin/posts/${saved.id}/seo`, { meta_title: seoTitle || null, meta_description: seoDescription || null, canonical_url: canonicalUrl || null });
+        if (seoTitle || seoDescription || canonicalUrl || socialImage) {
+          await api.put(`/admin/posts/${saved.id}/seo`, {
+            meta_title: seoTitle || null,
+            meta_description: seoDescription || null,
+            canonical_url: canonicalUrl || null,
+            og_image: socialImage || null,
+          });
+        } else if (post?.seo?.has_overrides) {
+          await api.delete(`/admin/posts/${saved.id}/seo`);
         }
       }
       return saved;
     },
 
     onSuccess: async () => {
-      console.log(
-        "POST FORM -> SAVE SUCCESS"
-      );
-
       await queryClient.invalidateQueries({
         queryKey: ["posts"],
       });
@@ -225,24 +187,20 @@ export default function PostForm({
       toast.success(
         mode === "create"
           ? "Post created successfully."
-          : "Post updated successfully."
+          : "Post updated successfully.",
       );
 
-      router.push(
-        "/admin/posts"
-      );
+      router.push("/admin/posts");
     },
 
-    onError: (error: { response?: { data?: { message?: string } }; message?: string }) => {
-      console.error(
-        "POST FORM -> SAVE ERROR:",
-        error
-      );
-
+    onError: (error: {
+      response?: { data?: { message?: string } };
+      message?: string;
+    }) => {
       toast.error(
         error?.response?.data?.message ??
           error?.message ??
-          "Unable to save post."
+          "Unable to save post.",
       );
     },
   });
@@ -253,14 +211,7 @@ export default function PostForm({
   |--------------------------------------------------------------------------
   */
 
-  const onSubmit = (
-    values: PostFormValues
-  ) => {
-    console.log(
-      "POST FORM -> VALID SUBMIT:",
-      values
-    );
-
+  const onSubmit = (values: PostFormValues) => {
     mutation.mutate(values);
   };
 
@@ -270,25 +221,13 @@ export default function PostForm({
   |--------------------------------------------------------------------------
   */
 
-  const onInvalid = (
-    formErrors: typeof errors
-  ) => {
-    console.error(
-      "POST FORM -> VALIDATION ERRORS:",
-      formErrors
-    );
-
-    const firstError =
-      Object.values(formErrors)[0];
+  const onInvalid = (formErrors: typeof errors) => {
+    const firstError = Object.values(formErrors)[0];
 
     if (firstError?.message) {
-      toast.error(
-        String(firstError.message)
-      );
+      toast.error(String(firstError.message));
     } else {
-      toast.error(
-        "Please check the form fields."
-      );
+      toast.error("Please check the form fields.");
     }
   };
 
@@ -303,14 +242,7 @@ export default function PostForm({
   */
 
   const handleSave = () => {
-    console.log(
-      "POST FORM -> SAVE BUTTON CLICKED"
-    );
-
-    handleSubmit(
-      onSubmit,
-      onInvalid
-    )();
+    handleSubmit(onSubmit, onInvalid)();
   };
 
   /*
@@ -324,14 +256,7 @@ export default function PostForm({
       onSubmit={(event) => {
         event.preventDefault();
 
-        console.log(
-          "POST FORM -> FORM SUBMIT EVENT"
-        );
-
-        handleSubmit(
-          onSubmit,
-          onInvalid
-        )();
+        handleSubmit(onSubmit, onInvalid)();
       }}
       className="grid grid-cols-1 gap-8 xl:grid-cols-[1fr_320px]"
     >
@@ -340,13 +265,9 @@ export default function PostForm({
       {/* ------------------------------------------------------------------ */}
 
       <div className="space-y-6 rounded-2xl border bg-background p-6">
-
         {/* Title */}
         <div className="space-y-2">
-          <label
-            htmlFor="title"
-            className="text-sm font-medium"
-          >
+          <label htmlFor="title" className="text-sm font-medium">
             Title
           </label>
 
@@ -357,9 +278,7 @@ export default function PostForm({
           />
 
           {errors.title && (
-            <p className="text-sm text-destructive">
-              {errors.title.message}
-            </p>
+            <p className="text-sm text-destructive">{errors.title.message}</p>
           )}
         </div>
 
@@ -367,35 +286,23 @@ export default function PostForm({
         <PostSlugInput
           value={slug}
           onChange={(value) => {
-            setValue(
-              "slug",
-              value,
-              {
-                shouldDirty: true,
-                shouldTouch: true,
-                shouldValidate: true,
-              }
-            );
+            setValue("slug", value, {
+              shouldDirty: true,
+              shouldTouch: true,
+              shouldValidate: true,
+            });
           }}
         />
 
-        <input
-          type="hidden"
-          {...register("slug")}
-        />
+        <input type="hidden" {...register("slug")} />
 
         {errors.slug && (
-          <p className="text-sm text-destructive">
-            {errors.slug.message}
-          </p>
+          <p className="text-sm text-destructive">{errors.slug.message}</p>
         )}
 
         {/* Excerpt */}
         <div className="space-y-2">
-          <label
-            htmlFor="excerpt"
-            className="text-sm font-medium"
-          >
+          <label htmlFor="excerpt" className="text-sm font-medium">
             Excerpt
           </label>
 
@@ -407,20 +314,49 @@ export default function PostForm({
           />
 
           {errors.excerpt && (
-            <p className="text-sm text-destructive">
-              {errors.excerpt.message}
-            </p>
+            <p className="text-sm text-destructive">{errors.excerpt.message}</p>
           )}
         </div>
 
-        <div className="space-y-2"><label htmlFor="category_id" className="text-sm font-medium">Category</label><select id="category_id" {...register("category_id", { valueAsNumber: true })} className="w-full rounded-lg border p-3"><option value="0">No category</option>{categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select></div>
-        <div className="space-y-2"><label htmlFor="post_type" className="text-sm font-medium">Post type</label><select id="post_type" {...register("post_type")} className="w-full rounded-lg border p-3">{["article", "review", "comparison", "tutorial", "news"].map(type => <option key={type} value={type}>{type}</option>)}</select></div>
+        <div className="space-y-2">
+          <label htmlFor="category_id" className="text-sm font-medium">
+            Category
+          </label>
+          <select
+            id="category_id"
+            {...register("category_id", { valueAsNumber: true })}
+            className="w-full rounded-lg border p-3"
+          >
+            <option value="0">No category</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="post_type" className="text-sm font-medium">
+            Post type
+          </label>
+          <select
+            id="post_type"
+            {...register("post_type")}
+            className="w-full rounded-lg border p-3"
+          >
+            {["article", "review", "comparison", "tutorial", "news"].map(
+              (type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ),
+            )}
+          </select>
+        </div>
 
         {/* Content */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Content
-          </label>
+          <label className="text-sm font-medium">Content</label>
 
           <Controller
             name="content"
@@ -429,19 +365,89 @@ export default function PostForm({
               <RichTextEditor
                 value={field.value ?? ""}
                 onChange={field.onChange}
+                imageAltFallback={title || "Post image"}
               />
             )}
           />
 
           {errors.content && (
-            <p className="text-sm text-destructive">
-              {errors.content.message}
-            </p>
+            <p className="text-sm text-destructive">{errors.content.message}</p>
           )}
         </div>
 
-        <div className="space-y-3"><h3 className="text-sm font-medium">Tags</h3><div className="flex flex-wrap gap-3">{availableTags.map(tag => <label key={tag.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={tagIds.includes(tag.id)} onChange={e => setTagIds(ids => e.target.checked ? [...ids, tag.id] : ids.filter(id => id !== tag.id))} />{tag.name}</label>)}</div></div>
-        <div className="space-y-3 rounded-xl border p-4"><h3 className="font-semibold">Search metadata</h3><label className="block text-sm">Meta title<input value={seoTitle} onChange={e => setSeoTitle(e.target.value)} maxLength={255} className="mt-2 w-full rounded-lg border p-3" /></label><label className="block text-sm">Meta description<textarea value={seoDescription} onChange={e => setSeoDescription(e.target.value)} maxLength={500} rows={3} className="mt-2 w-full rounded-lg border p-3" /></label><label className="block text-sm">Canonical URL<input type="url" value={canonicalUrl} onChange={e => setCanonicalUrl(e.target.value)} className="mt-2 w-full rounded-lg border p-3" /></label></div>
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium">Tags</h3>
+          <div className="flex flex-wrap gap-3">
+            {availableTags.map((tag) => (
+              <label key={tag.id} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={tagIds.includes(tag.id)}
+                  onChange={(e) =>
+                    setTagIds((ids) =>
+                      e.target.checked
+                        ? [...ids, tag.id]
+                        : ids.filter((id) => id !== tag.id),
+                    )
+                  }
+                />
+                {tag.name}
+              </label>
+            ))}
+          </div>
+        </div>
+        <details className="rounded-xl border p-4">
+          <summary className="cursor-pointer font-semibold">
+            SEO / Advanced SEO
+          </summary>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Leave overrides blank to use the post title, excerpt or plain-text
+            content, featured image and generated public URL automatically.
+          </p>
+          <div className="mt-4 space-y-3">
+            <label className="block text-sm">
+              Meta title
+              <input
+                value={seoTitle}
+                onChange={(e) => setSeoTitle(e.target.value)}
+                maxLength={255}
+                placeholder={title || "Automatic from title"}
+                className="mt-2 w-full rounded-lg border p-3"
+              />
+            </label>
+            <label className="block text-sm">
+              Meta description
+              <textarea
+                value={seoDescription}
+                onChange={(e) => setSeoDescription(e.target.value)}
+                maxLength={500}
+                rows={3}
+                placeholder="Automatic from excerpt or content"
+                className="mt-2 w-full rounded-lg border p-3"
+              />
+            </label>
+            <label className="block text-sm">
+              Canonical URL
+              <input
+                type="url"
+                value={canonicalUrl}
+                onChange={(e) => setCanonicalUrl(e.target.value)}
+                placeholder="Automatically generated public URL"
+                className="mt-2 w-full rounded-lg border p-3"
+              />
+            </label>
+            <label className="block text-sm">
+              Social image path
+              <input
+                value={socialImage}
+                onChange={(e) => setSocialImage(e.target.value)}
+                maxLength={2048}
+                placeholder="Automatic from featured image"
+                className="mt-2 w-full rounded-lg border p-3"
+              />
+            </label>
+          </div>
+        </details>
 
         {/* Allow Comments */}
         <div className="flex items-center gap-3 rounded-xl border p-4">
@@ -452,10 +458,7 @@ export default function PostForm({
             {...register("allow_comments")}
           />
 
-          <label
-            htmlFor="allow_comments"
-            className="text-sm font-medium"
-          >
+          <label htmlFor="allow_comments" className="text-sm font-medium">
             Allow comments on this post
           </label>
         </div>
@@ -465,13 +468,9 @@ export default function PostForm({
           type="button"
           onClick={handleSave}
           className="w-full md:w-auto"
-          disabled={
-            mutation.isPending ||
-            isSubmitting
-          }
+          disabled={mutation.isPending || isSubmitting}
         >
-          {mutation.isPending ||
-          isSubmitting
+          {mutation.isPending || isSubmitting
             ? mode === "create"
               ? "Publishing..."
               : "Saving..."
@@ -488,20 +487,14 @@ export default function PostForm({
       <PostEditorSidebar
         status={status}
         setStatus={(value) => {
-          setValue(
-            "status",
-            value,
-            {
-              shouldDirty: true,
-              shouldTouch: true,
-              shouldValidate: true,
-            }
-          );
+          setValue("status", value, {
+            shouldDirty: true,
+            shouldTouch: true,
+            shouldValidate: true,
+          });
         }}
         featuredImage={featuredImage}
-        setFeaturedImage={
-          setFeaturedImage
-        }
+        setFeaturedImage={setFeaturedImage}
       />
     </form>
   );

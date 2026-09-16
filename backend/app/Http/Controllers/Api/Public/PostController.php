@@ -68,6 +68,7 @@ class PostController extends Controller
 
                     ->with([
                         'category:id,name,slug',
+                        'user:id,name',
 
                         'tags:id,name,slug',
 
@@ -239,6 +240,7 @@ class PostController extends Controller
                     ->with([
 
                         'category:id,name,slug',
+                        'user:id,name',
 
                         'tags:id,name,slug',
 

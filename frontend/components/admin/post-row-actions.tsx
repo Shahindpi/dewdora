@@ -66,7 +66,7 @@ export default function PostRowActions({
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            onClick={() => window.open(`/${slug}`, "_blank")}
+            onClick={() => window.open(`/posts/${slug}`, "_blank", "noopener,noreferrer")}
           >
             <Eye className="h-4 w-4" />
             View Live

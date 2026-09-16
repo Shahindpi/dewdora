@@ -91,6 +91,7 @@ class SearchController extends Controller
         */
 
         $categories = Category::query()
+            ->where('status', true)
             ->where('name', 'like', "%{$query}%")
             ->limit(5)
             ->get();
@@ -113,6 +114,7 @@ class SearchController extends Controller
         */
 
         $brands = Brand::query()
+            ->where('status', true)
             ->where('name', 'like', "%{$query}%")
             ->limit(5)
             ->get();
@@ -214,6 +216,7 @@ class SearchController extends Controller
                 */
 
                 Category::query()
+                    ->where('status', true)
                     ->where('name', 'like', "%{$query}%")
                     ->limit(3)
                     ->get([
