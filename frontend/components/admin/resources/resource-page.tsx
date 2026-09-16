@@ -183,7 +183,7 @@ function Editor({
             <input
               name={field.key}
               type="checkbox"
-              defaultChecked={Boolean(initial?.[field.key])}
+              defaultChecked={initial ? Boolean(initial[field.key]) : true}
               className="ml-3"
             />
           ) : field.kind === "textarea" || field.kind === "array" ? (
@@ -205,7 +205,11 @@ function Editor({
               defaultValue={String(
                 field.key === "featured_image"
                   ? initial?.featured_image_path || ""
-                  : initial?.[field.key] || "",
+                  : field.key === "image"
+                    ? initial?.image_path || ""
+                    : field.key === "logo"
+                      ? initial?.logo_path || ""
+                      : initial?.[field.key] ?? "",
               )}
               required={field.required}
               step={field.kind === "number" ? "any" : undefined}

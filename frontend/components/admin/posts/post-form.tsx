@@ -35,6 +35,7 @@ interface Props {
     featured_image?: string | null;
     featured_image_path?: string | null;
     tags?: { id: number; name: string }[];
+    affiliate_products?: { id: number; name: string }[];
     seo?: {
       meta_title?: string;
       meta_description?: string;
@@ -63,6 +64,9 @@ export default function PostForm({ mode, post }: Props) {
   const [tagIds, setTagIds] = useState<number[]>(
     post?.tags?.map((tag) => tag.id) || [],
   );
+  const [productIds, setProductIds] = useState<number[]>(
+    post?.affiliate_products?.map((product) => product.id) || [],
+  );
   const [seoTitle, setSeoTitle] = useState(
     post?.seo?.overrides?.meta_title || "",
   );
@@ -79,6 +83,12 @@ export default function PostForm({ mode, post }: Props) {
     queryKey: ["post-tags"],
     queryFn: async () =>
       (await api.get("/admin/tags", { params: { per_page: 50 } })).data
+        .data as { id: number; name: string }[],
+  });
+  const { data: availableProducts = [] } = useQuery({
+    queryKey: ["post-products"],
+    queryFn: async () =>
+      (await api.get("/admin/affiliate-products", { params: { per_page: 100 } })).data
         .data as { id: number; name: string }[],
   });
 
@@ -165,6 +175,13 @@ export default function PostForm({ mode, post }: Props) {
           : await createPost(payload);
       if (saved?.id) {
         await api.put(`/admin/posts/${saved.id}/tags`, { tag_ids: tagIds });
+        await api.put(`/admin/posts/${saved.id}/affiliate-products`, {
+          products: productIds.map((id, sort_order) => ({
+            affiliate_product_id: id,
+            sort_order,
+            is_primary: sort_order === 0,
+          })),
+        });
         if (seoTitle || seoDescription || canonicalUrl || socialImage) {
           await api.put(`/admin/posts/${saved.id}/seo`, {
             meta_title: seoTitle || null,
@@ -396,6 +413,19 @@ export default function PostForm({ mode, post }: Props) {
             ))}
           </div>
         </div>
+        <fieldset className="space-y-3 rounded-xl border p-4">
+          <legend className="px-1 text-sm font-semibold">Products mentioned</legend>
+          <p className="text-sm text-muted-foreground">Link relevant products to show recommendations in the published article. The first selected product is primary.</p>
+          <div className="grid max-h-48 gap-2 overflow-y-auto sm:grid-cols-2">
+            {availableProducts.map((product) => (
+              <label key={product.id} className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={productIds.includes(product.id)} onChange={(event) => setProductIds((ids) => event.target.checked ? [...ids, product.id] : ids.filter((id) => id !== product.id))} />
+                {product.name}
+              </label>
+            ))}
+          </div>
+          {!availableProducts.length && <p className="text-sm text-muted-foreground">Create an affiliate product to attach it here.</p>}
+        </fieldset>
         <details className="rounded-xl border p-4">
           <summary className="cursor-pointer font-semibold">
             SEO / Advanced SEO

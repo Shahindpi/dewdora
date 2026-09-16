@@ -72,6 +72,7 @@ class TagController extends Controller
         */
 
         $tag = Tag::create($validated);
+        CacheService::clearPublicCaches();
 
 
         return ApiResponse::success(
@@ -157,6 +158,7 @@ class TagController extends Controller
 
         CacheService::clearTag($oldSlug);
         CacheService::clearTag($tag->slug);
+        CacheService::clearPublicCaches();
 
         return ApiResponse::success(
             new TagResource(
@@ -173,7 +175,9 @@ class TagController extends Controller
     public function destroy(Tag $tag): JsonResponse
     {
 
+        CacheService::clearTag($tag->slug);
         $tag->delete();
+        CacheService::clearPublicCaches();
 
 
         return response()->json([

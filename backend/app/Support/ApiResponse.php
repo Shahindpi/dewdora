@@ -4,9 +4,22 @@ namespace App\Support;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ApiResponse
 {
+    public static function nestedPage(AnonymousResourceCollection $items, LengthAwarePaginator $page): array
+    {
+        return [
+            'data' => $items,
+            'meta' => [
+                'current_page' => $page->currentPage(),
+                'last_page' => $page->lastPage(),
+                'per_page' => $page->perPage(),
+                'total' => $page->total(),
+            ],
+        ];
+    }
     /**
      * Successful JSON response.
      */

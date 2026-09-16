@@ -152,6 +152,8 @@ class PostController extends Controller
         */
 
         $post = Post::create($validated);
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         /*
         |--------------------------------------------------------------------------
@@ -196,6 +198,7 @@ class PostController extends Controller
         $post->tags()->sync(
             $validated['tag_ids']
         );
+        CacheService::clearPostCaches($post->slug);
 
         $post->load('tags');
 
@@ -221,7 +224,6 @@ class PostController extends Controller
             'products' => [
                 'required',
                 'array',
-                'min:1',
             ],
 
             'products.*.affiliate_product_id' => [
@@ -260,6 +262,7 @@ class PostController extends Controller
         $post->affiliateProducts()->sync(
             $syncData
         );
+        CacheService::clearPostCaches($post->slug);
 
         $post->load([
             'affiliateProducts',
@@ -309,6 +312,7 @@ class PostController extends Controller
     ) {
 
         $validated = $request->validated();
+        $oldSlug = $post->slug;
 
         /*
         |--------------------------------------------------------------------------
@@ -335,6 +339,8 @@ class PostController extends Controller
         }
 
         $post->update($validated);
+        CacheService::clearPostCaches($oldSlug);
+        CacheService::clearPost($post->slug);
 
         /*
         |--------------------------------------------------------------------------
@@ -368,6 +374,8 @@ class PostController extends Controller
         CacheService::clearPost($post->slug);
 
         $post->delete();
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         return response()->json([
             'success' => true,

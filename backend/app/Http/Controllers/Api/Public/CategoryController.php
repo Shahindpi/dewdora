@@ -158,10 +158,8 @@ class CategoryController extends Controller
                     $category
                 ),
 
-                'posts' => PostResource::collection(
-                    $posts
-                ),
-                'products' => AffiliateProductResource::collection($products),
+                'posts' => ApiResponse::nestedPage(PostResource::collection($posts->getCollection()), $posts),
+                'products' => ApiResponse::nestedPage(AffiliateProductResource::collection($products->getCollection()), $products),
                 'brands' => BrandResource::collection($brands),
             ],
             'Category retrieved successfully.'

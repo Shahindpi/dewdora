@@ -182,6 +182,8 @@ class SeoMetaController extends Controller
             $seoMeta->delete();
         }
 
+        CacheService::clearProduct($affiliateProduct->slug);
+
         return ApiResponse::success(
             null,
             'Affiliate product SEO metadata deleted successfully.'

@@ -159,6 +159,8 @@ class AffiliateProductController extends Controller
         */
 
         $product = AffiliateProduct::create($validated);
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         /*
         |--------------------------------------------------------------------------
@@ -272,6 +274,8 @@ class AffiliateProductController extends Controller
 
         CacheService::clearProduct($oldSlug);
         CacheService::clearProduct($affiliateProduct->slug);
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         return ApiResponse::success(
             new AffiliateProductResource($affiliateProduct),
@@ -295,6 +299,8 @@ class AffiliateProductController extends Controller
         $slug = $affiliateProduct->slug;
         $affiliateProduct->delete();
         CacheService::clearProduct($slug);
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         return response()->json([
             'success' => true,

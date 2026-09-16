@@ -168,9 +168,7 @@ class TagController extends Controller
                     $tag
                 ),
 
-                'posts' => PostResource::collection(
-                    $posts
-                ),
+                'posts' => ApiResponse::nestedPage(PostResource::collection($posts->getCollection()), $posts),
             ],
             'Tag retrieved successfully.'
         );
