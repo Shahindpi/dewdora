@@ -35,7 +35,7 @@ export function AffiliateCarousel({ products }: { products: PublicProduct[] }) {
         seen.current.add(product.id);
         trackEvent("affiliate_product_impression", { product_id: product.id, product_name: product.name, brand_id: product.brand_id ?? undefined, brand_name: product.brand?.name, category: product.category?.name, position: position + 1, carousel_name: "homepage_affiliate_products" });
       }
-    }, { root, threshold: 0.6 });
+    }, { threshold: 0.6 });
     Array.from(root.children).forEach(element => observer.observe(element));
     return () => observer.disconnect();
   }, [products]);

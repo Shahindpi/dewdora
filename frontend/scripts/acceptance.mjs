@@ -13,6 +13,8 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
    headless: true,
  });
  const page=await browser.newPage({viewport:{width:1440,height:1000}});
+ await page.route('https://www.googletagmanager.com/**', route => route.abort());
+ await page.addInitScript(() => { window.__dewdoraEvents=[]; window.dataLayer=[]; const originalPush=window.dataLayer.push.bind(window.dataLayer);window.dataLayer.push=(...args)=>{for(const entry of args)window.__dewdoraEvents.push(Array.from(entry));return originalPush(...args);}; });
  const results=[],errors=[],requests=[];
  page.on('pageerror',e=>errors.push(e.message));
  page.on('response',r=>{if(r.url().includes('/api/v1/'))requests.push({url:r.url(),status:r.status()});});
@@ -51,7 +53,7 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
   let row=page.getByRole('row').filter({hasText:'Browser Product '+stamp});await row.getByRole('link',{name:'Edit',exact:true}).click();await page.locator('input[name=name]').fill('Browser Product Updated '+stamp);await page.getByRole('button',{name:'Save product',exact:true}).click();await page.waitForURL('**/admin/products');
   await page.goto(base+'/products/browser-product-'+stamp);await page.getByRole('heading',{name:'Browser Product Updated '+stamp,exact:true}).waitFor();const offer=page.getByRole('link',{name:'View offer ↗'}).first();if(await offer.getAttribute('href')!=='https://example.com/offer')throw Error('Wrong offer');
   await page.goto(base+'/');await page.getByRole('heading',{name:'Explore products',exact:true}).waitFor();
-  const homepageProduct=page.getByRole('article').filter({hasText:'Browser Product Updated '+stamp});await homepageProduct.waitFor();
+  const homepageProduct=page.getByRole('region',{name:'Affiliate products'}).getByRole('article').filter({hasText:'Browser Product Updated '+stamp});await homepageProduct.waitFor();
   const homeOffer=homepageProduct.getByRole('link',{name:'View offer ↗'});
   if(await homeOffer.getAttribute('href')!=='https://example.com/offer')throw Error('Homepage offer destination is wrong');
   await page.screenshot({path:path.join(output,'desktop-with-product.png'),fullPage:true});
@@ -64,6 +66,41 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
   const row=page.getByRole('row').filter({hasText:'Browser Review '+stamp});await row.getByRole('link',{name:'Browser Review '+stamp,exact:true}).click();await page.getByLabel('Title',{exact:true}).fill('Updated Browser Review '+stamp);await page.getByRole('button',{name:'Save Changes',exact:true}).click();await page.waitForURL('**/admin/posts');await page.goto(base+'/posts/browser-review-'+stamp);await page.getByRole('heading',{name:'Updated Browser Review '+stamp,exact:true}).waitFor();await page.goto(base+'/admin/posts');await page.getByRole('button',{name:'Actions for Updated Browser Review '+stamp,exact:true}).click();await page.getByRole('menuitem',{name:'Delete',exact:true}).click();await page.getByRole('alertdialog').getByRole('button',{name:'Delete',exact:true}).click();await page.getByRole('link',{name:'Updated Browser Review '+stamp,exact:true}).waitFor({state:'detached'});
  });
  for(const path of ['/','/products','/categories','/tags','/brands','/posts','/search?q=Runtime','/contact'])await check('Public '+path,async()=>{const r=await page.goto(base+path);if(r.status()!==200)throw Error(path+' '+r.status());await page.locator('h1').first().waitFor();});
+ await check('Carousel, SEO, GA events, hero and page sizes',async()=>{
+  await page.setViewportSize({width:1440,height:1000});
+  await page.goto(base+'/');
+  const carousel=page.getByRole('region',{name:'Affiliate products'});
+  const cards=carousel.getByRole('article');
+  if(await cards.count()<8)throw Error('Expected eight real database products in carousel');
+  const first=await cards.nth(0).boundingBox(), sixth=await cards.nth(5).boundingBox(), seventh=await cards.nth(6).boundingBox();
+  if(!first||!sixth||!seventh||seventh.x<sixth.x+sixth.width)throw Error('Desktop carousel should show six cards');
+  const image=cards.first().locator('img');await image.waitFor();if(!await image.evaluate(img=>img.complete&&img.naturalWidth>0))throw Error('Carousel product image did not load');
+  const previous=carousel.getByRole('button',{name:'Previous affiliate products'}),next=carousel.getByRole('button',{name:'Next affiliate products'});
+  if(!await previous.isDisabled()||await next.isDisabled())throw Error('Initial navigation state is wrong');
+  await next.click(); await page.waitForTimeout(400);
+  if(await previous.isDisabled())throw Error('Previous did not enable');
+  for(let i=0;i<7;i++)if(!await next.isDisabled())await next.click();
+  if(!await next.isDisabled())throw Error('Next did not stop at last card');
+  for(let i=0;i<8;i++)if(!await previous.isDisabled())await previous.click();
+  if(!await previous.isDisabled())throw Error('Previous did not stop at first card');
+  await page.waitForFunction(()=>window.__dewdoraEvents?.some(e=>e[0]==='event'&&e[1]==='affiliate_product_impression'));
+  const events=await page.evaluate(()=>window.__dewdoraEvents);
+  const impression=events.find(e=>e[1]==='affiliate_product_impression');
+  if(!impression[2].product_id||impression[2].brand_id!==1||impression[2].brand_name!=='Test Brand')throw Error('Brand impression parameters missing');
+  await page.evaluate(()=>document.addEventListener('click',e=>{if(e.target.closest('a[href^="https://example.com/offer/"]'))e.preventDefault()},true));
+  await cards.first().getByRole('link',{name:'View offer ↗'}).click();
+  const clicks=await page.evaluate(()=>window.__dewdoraEvents.filter(e=>e[1]==='affiliate_click'));
+  if(!clicks.length||clicks.at(-1)[2].brand_id!==1||clicks.at(-1)[2].product_id!==8)throw Error('Click analytics parameters missing');
+  if(!await page.getByRole('heading',{name:'Test hero banner'}).isVisible())throw Error('Hero banner absent');
+  const markup=await page.content();if(markup.indexOf('Affiliate products')>markup.indexOf('Test hero banner'))throw Error('Homepage sections out of order');
+  for(const route of ['/products','/products/test-product-8','/posts/test-review']){
+    const response=await page.goto(base+route);if(response.status()!==200)throw Error(route+' returned '+response.status());
+    for(const selector of ['meta[property="og:title"]','meta[property="og:description"]','meta[property="og:image"]','meta[property="og:url"]','meta[property="og:type"]','meta[name="twitter:card"]','meta[name="twitter:title"]','meta[name="twitter:description"]','meta[name="twitter:image"]','link[rel="canonical"]'])if(!await page.locator(selector).count())throw Error(route+' missing '+selector);
+  }
+  await page.goto(base+'/admin/hero-banners');await page.getByRole('heading',{name:'Hero banners'}).waitFor();
+  await page.getByRole('button',{name:'Add banner'}).click();await page.locator('input[name=heading]').fill('Browser banner '+stamp);await page.locator('input[name=sort_order]').fill('1');await page.getByRole('button',{name:'Save',exact:true}).click();await page.getByRole('heading',{name:'Browser banner '+stamp}).waitFor();await page.getByRole('button',{name:'Delete',exact:true}).last().click();
+  await page.goto(base+'/admin/categories');const sizePending=page.waitForResponse(r=>r.url().includes('per_page=all'));await page.getByRole('combobox',{name:'Items per page'}).selectOption('all');const sizeResponse=await sizePending;if(sizeResponse.status()!==200)throw Error('All page-size request failed');
+ });
  await check('Media UI upload, list, delete',async()=>{
    await page.goto(base+'/admin/media');await page.getByRole('heading',{name:'Media library'}).waitFor();
    const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL/nwAAAABJRU5ErkJggg==','base64');
