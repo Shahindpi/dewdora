@@ -1,6 +1,7 @@
 import api from "@/lib/axios";
 import type { ApiResponse, PaginationMeta } from "@/types/api";
 import type { AdminRole, User } from "@/types/user";
+import { allResourceOptions } from "@/services/admin-resources";
 
 export interface UserPayload {
   role_id: number;
@@ -24,8 +25,7 @@ export async function getUser(id: number) {
 }
 
 export async function getRoles() {
-  const response = await api.get<ApiResponse<AdminRole[]>>("/admin/roles");
-  return response.data.data;
+  return allResourceOptions<AdminRole>("roles");
 }
 
 export async function createUser(payload: UserPayload) {

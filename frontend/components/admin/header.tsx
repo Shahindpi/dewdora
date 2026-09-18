@@ -10,7 +10,7 @@ import {
 
 import { useAuth } from "@/hooks/use-auth";
 import Sidebar from "@/components/admin/sidebar";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +24,7 @@ export default function AdminHeader() {
           <Menu className="h-5 w-5" />
         </SheetTrigger>
         <SheetContent side="left" className="w-80 p-0">
+          <SheetTitle className="sr-only">Admin navigation</SheetTitle>
           <Sidebar mobile />
         </SheetContent>
       </Sheet>

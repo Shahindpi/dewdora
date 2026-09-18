@@ -2,6 +2,7 @@ import api from "@/lib/axios";
 import type { ApiResponse, PaginationMeta } from "@/types/api";
 import type { AffiliateProduct, AffiliateNetwork, Brand } from "@/types/product";
 import type { Category } from "@/types/category";
+import { allResourceOptions } from "@/services/admin-resources";
 
 export interface ProductPayload {
   name: string;
@@ -51,9 +52,9 @@ export async function deleteAdminProduct(id: number) {
 
 export async function getProductOptions() {
   const [brands, networks, categories] = await Promise.all([
-    api.get<ApiResponse<Brand[]>>("/admin/brands", { params: { per_page: 100 } }),
-    api.get<ApiResponse<AffiliateNetwork[]>>("/admin/affiliate-networks", { params: { per_page: 100 } }),
-    api.get<ApiResponse<Category[]>>("/admin/categories", { params: { per_page: 100 } }),
+    allResourceOptions<Brand>("brands"),
+    allResourceOptions<AffiliateNetwork>("affiliate-networks"),
+    allResourceOptions<Category>("categories"),
   ]);
-  return { brands: brands.data.data, networks: networks.data.data, categories: categories.data.data };
+  return { brands, networks, categories };
 }

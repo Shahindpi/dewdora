@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SiteShell } from "@/components/public/site-shell";
 import { PostCard, ProductCard } from "@/components/public/cards";
-import { publicGet, type PublicPost, type PublicProduct } from "@/lib/public-api";
+import { PublicApiError, publicGet, type PublicPost, type PublicProduct } from "@/lib/public-api";
 import { imageUrl } from "@/lib/image";
 import { Comments } from "@/components/public/forms";
 import type { ApiResponse } from "@/types/api";
@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   let detail: Detail;
-  try { detail = await publicGet<Detail>(`posts/${encodeURIComponent(slug)}`); } catch { notFound(); }
+  try { detail = await publicGet<Detail>(`posts/${encodeURIComponent(slug)}`); } catch (error) { if (error instanceof PublicApiError && error.status === 404) notFound(); throw error; }
   const { post, related_posts } = detail.data;
   return <SiteShell><article className="mx-auto max-w-3xl"><Link href="/posts" className="text-sm font-semibold text-[#165e46]">← All articles</Link><p className="mt-10 text-sm font-bold uppercase tracking-widest text-[#2c9873]">{post.category?.name || "Article"}</p><h1 className="mt-3 text-4xl font-black md:text-5xl">{post.title}</h1><p className="mt-4 text-sm text-[#71857f]">{post.author?.name ? `By ${post.author.name}` : "Dewdora editorial"}{post.published_at ? ` • ${new Date(post.published_at).toLocaleDateString()}` : ""}{post.reading_time ? ` • ${post.reading_time} min read` : ""}</p><p className="mt-5 text-lg text-[#567069]">{post.excerpt}</p>{post.featured_image && <Image unoptimized width={1200} height={700} src={imageUrl(post.featured_image)} alt={`${post.title} featured image`} className="mt-8 h-auto w-full rounded-2xl object-cover" />}
     {!!post.affiliate_products?.length && <p className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><strong>Affiliate disclosure:</strong> This article contains eligible affiliate links. Dewdora may earn a commission at no extra cost to you.</p>}

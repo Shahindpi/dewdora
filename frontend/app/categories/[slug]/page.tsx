@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteShell } from "@/components/public/site-shell";
 import { PostCard, ProductCard } from "@/components/public/cards";
-import { publicGet, type PublicPost, type PublicProduct, type PublicCategory, type ListResult } from "@/lib/public-api";
+import { PublicApiError, publicGet, type PublicPost, type PublicProduct, type PublicCategory, type ListResult } from "@/lib/public-api";
 import type { ApiResponse } from "@/types/api";
 
 type CategoryDetail = {
@@ -16,7 +16,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const { slug } = await params;
   const { product_page, page } = await searchParams;
   let result: ApiResponse<CategoryDetail>;
-  try { result = await publicGet(`categories/${encodeURIComponent(slug)}`, { product_page, page }); } catch { notFound(); }
+  try { result = await publicGet(`categories/${encodeURIComponent(slug)}`, { product_page, page }); } catch (error) { if (error instanceof PublicApiError && error.status === 404) notFound(); throw error; }
   const { category, products, brands, posts } = result.data;
   return <SiteShell><h1 className="text-4xl font-black">{category.name}</h1><p className="mt-4 max-w-2xl text-[#567069]">{category.description}</p>
     <section className="mt-10"><h2 className="text-3xl font-bold">Recommended products</h2><div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">{products?.data?.map(product => <ProductCard key={product.id} product={product} />)}</div>{!products?.data?.length && <p className="mt-5 text-[#567069]">No active products in this category yet.</p>}{products?.meta && products.meta.last_page > 1 && <nav aria-label="Product pages" className="mt-8 flex gap-4">{products.meta.current_page > 1 && <Link href={`?product_page=${products.meta.current_page - 1}&page=${page || 1}`} className="rounded-lg border px-4 py-2">Previous</Link>}<span>Page {products.meta.current_page} of {products.meta.last_page}</span>{products.meta.current_page < products.meta.last_page && <Link href={`?product_page=${products.meta.current_page + 1}&page=${page || 1}`} className="rounded-lg border px-4 py-2">Next</Link>}</nav>}</section>

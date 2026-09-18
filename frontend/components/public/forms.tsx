@@ -18,5 +18,5 @@ export function ContactForm() {
 export function NewsletterForm() {
  const [message, setMessage] = useState("");
  async function submit(e: FormEvent<HTMLFormElement>) { e.preventDefault(); const form = e.currentTarget; try { const response = await api.post("/public/newsletter/subscribe", Object.fromEntries(new FormData(form))); setMessage(response.data.message || "Subscribed!"); form.reset(); } catch { setMessage("Could not subscribe. Please try again."); } }
- return <form onSubmit={submit} className="mt-5 flex max-w-lg flex-wrap gap-3"><input name="email" type="email" required placeholder="Your email address" className="min-w-0 flex-1 rounded-lg border p-3 text-[#18352d]" /><button className="rounded-lg bg-[#e8a854] px-6 py-3 font-semibold text-[#18352d]">Subscribe</button><p role="status" className="w-full">{message}</p></form>;
+ return <form onSubmit={submit} className="mt-5 flex max-w-lg flex-wrap gap-3"><input name="email" type="email" required placeholder="Your email address" className="min-w-0 flex-1 rounded-lg border bg-white p-3 text-[#18352d] placeholder:text-[#567069]" /><button className="rounded-lg bg-[#e8a854] px-6 py-3 font-semibold text-[#18352d]">Subscribe</button><p role="status" className="w-full">{message}</p></form>;
 }

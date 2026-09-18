@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
-import api from "@/lib/axios";
+import { listResources, saveResource, deleteResource, type ResourceEndpoint, type ResourceRecord } from "@/services/admin-resources";
 import { toast } from "sonner";
 import type { PaginationMeta } from "@/types/api";
 
@@ -12,10 +12,10 @@ type Field = {
   required?: boolean;
   options?: { label: string; value: string }[];
 };
-type Config = { title: string; endpoint: string; fields: Field[] };
+type Config = { title: string; endpoint: ResourceEndpoint; fields: Field[] };
 const name: Field = { key: "name", label: "Name", required: true };
 const slug: Field = { key: "slug", label: "Slug" };
-export const resources: Record<string, Config> = {
+const resources: Record<string, Config> = {
   categories: {
     title: "Categories",
     endpoint: "categories",
@@ -62,42 +62,9 @@ export const resources: Record<string, Config> = {
       { key: "status", label: "Active", kind: "checkbox" },
     ],
   },
-  products: {
-    title: "Affiliate products",
-    endpoint: "affiliate-products",
-    fields: [
-      name,
-      slug,
-      {
-        key: "affiliate_url",
-        label: "Affiliate URL",
-        kind: "url",
-        required: true,
-      },
-      { key: "website_url", label: "Website URL", kind: "url" },
-      { key: "short_description", label: "Summary", kind: "textarea" },
-      { key: "description", label: "Description", kind: "textarea" },
-      { key: "brand_id", label: "Brand ID", kind: "number" },
-      { key: "affiliate_network_id", label: "Network ID", kind: "number" },
-      { key: "category_id", label: "Category ID", kind: "number" },
-      { key: "price", label: "Price", kind: "number" },
-      { key: "currency", label: "Currency" },
-      { key: "rating", label: "Rating (0–5)", kind: "number" },
-      { key: "featured_image", label: "Image path" },
-      { key: "pros", label: "Pros (one per line)", kind: "array" },
-      { key: "cons", label: "Cons (one per line)", kind: "array" },
-      { key: "free_trial", label: "Free trial", kind: "checkbox" },
-      { key: "featured", label: "Featured", kind: "checkbox" },
-      { key: "status", label: "Active", kind: "checkbox" },
-    ],
-  },
+
 };
-type RecordItem = {
-  id: number;
-  name?: string;
-  slug?: string;
-  [key: string]: unknown;
-};
+type RecordItem = ResourceRecord;
 function errorMessage(error: unknown) {
   if (typeof error === "object" && error && "response" in error) {
     const r = (
@@ -128,7 +95,7 @@ function serialize(form: HTMLFormElement, fields: Field[]) {
           ? data.has(field.key)
           : field.kind === "number"
             ? raw === "" || raw == null
-              ? null
+              ? field.key === "sort_order" ? 0 : null
               : Number(raw)
             : field.kind === "array"
               ? String(raw || "")
@@ -157,9 +124,7 @@ function Editor({
     setBusy(true);
     try {
       const values = serialize(event.currentTarget, config.fields);
-      if (initial)
-        await api.put(`/admin/${config.endpoint}/${initial.id}`, values);
-      else await api.post(`/admin/${config.endpoint}`, values);
+      await saveResource(config.endpoint, values, initial?.id);
       toast.success("Saved successfully");
       onSaved();
     } catch (error) {
@@ -244,19 +209,21 @@ export function ResourcePage({ resource }: { resource: string }) {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<RecordItem | "new" | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
   useEffect(() => {
     if (!config) return;
     let active = true;
-    api
-      .get(`/admin/${config.endpoint}`, { params: { page, search } })
+    listResources(config.endpoint, { page, search })
       .then((r) => {
         if (active) {
-          setItems(r.data.data || []);
-          setMeta(r.data.meta);
+          setItems(r.items);
+          setMeta(r.meta);
+          setError(null);
         }
       })
       .catch((error) => {
-        if (active) toast.error(errorMessage(error));
+        if (active) setError(errorMessage(error));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -264,15 +231,17 @@ export function ResourcePage({ resource }: { resource: string }) {
     return () => {
       active = false;
     };
-  }, [config, page, search, editing]);
+  }, [config, page, search, editing, revision]);
   if (!config) return <p>Resource not found.</p>;
   async function remove(item: RecordItem) {
     if (!window.confirm(`Delete ${item.name || item.id}?`)) return;
     try {
-      await api.delete(`/admin/${config.endpoint}/${item.id}`);
+      await deleteResource(config.endpoint, item.id);
       toast.success("Deleted");
       setEditing(null);
       setItems((current) => current.filter((x) => x.id !== item.id));
+      if (items.length === 1 && page > 1) setPage(page - 1);
+      setRevision(value => value + 1);
     } catch (error) {
       toast.error(errorMessage(error));
     }
@@ -337,7 +306,8 @@ export function ResourcePage({ resource }: { resource: string }) {
           </tbody>
         </table>
         {loading && <p className="p-4">Loading…</p>}
-        {!loading && !items.length && <p className="p-4">No records found.</p>}
+        {error && <p role="alert" className="p-4 text-red-700">{error} <button onClick={() => setRevision(value => value + 1)} className="underline">Retry</button></p>}
+        {!loading && !error && !items.length && <p className="p-4">No records found.</p>}
       </div>
       {meta && meta.last_page > 1 && (
         <div className="mt-5 flex items-center gap-3">

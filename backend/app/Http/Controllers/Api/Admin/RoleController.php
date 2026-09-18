@@ -9,12 +9,18 @@ use App\Http\Resources\RoleResource;
 use App\Models\Role;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class RoleController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return RoleResource::collection(Role::query()->withCount('users')->orderBy('name')->get())
+        $roles = Role::query()->withCount('users')
+            ->when($request->filled('search'), fn ($query) => $query->where('name', 'like', '%'.$request->string('search').'%'))
+            ->orderBy('name')
+            ->paginate(min(max($request->integer('per_page', 15), 1), 100));
+
+        return RoleResource::collection($roles)
             ->additional(['success' => true, 'message' => 'Roles retrieved successfully.']);
     }
 

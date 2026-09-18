@@ -56,7 +56,7 @@ export default function Sidebar({ mobile = false }: { mobile?: boolean }) {
 
           const active =
             pathname === item.href ||
-            pathname.startsWith(`${item.href}/`);
+            (item.href !== "/admin" && pathname.startsWith(`${item.href}/`));
 
           return (
             <Link

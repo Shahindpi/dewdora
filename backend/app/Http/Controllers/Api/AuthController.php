@@ -3,14 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\UserResource;
+use App\Models\User;
+use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
-use App\Support\ApiResponse;
-use App\Http\Requests\Auth\LoginRequest;
 
 class AuthController extends Controller
 {
@@ -18,18 +17,16 @@ class AuthController extends Controller
     {
         $credentials = $request->validated();
 
-        if (! Auth::attempt($credentials)) {
+        $user = User::where('email', $credentials['email'])->first();
+
+        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
             return ApiResponse::error(
                 'Invalid credentials.',
                 null, 401
             );
         }
 
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-
         if (! $user->status) {
-            Auth::logout();
 
             return ApiResponse::error(
                 'Your account is inactive.',
@@ -45,7 +42,7 @@ class AuthController extends Controller
         return ApiResponse::success(
             [
                 'token' => $token,
-                'user'  => new UserResource(
+                'user' => new UserResource(
                     $user->load('role')
                 ),
             ],

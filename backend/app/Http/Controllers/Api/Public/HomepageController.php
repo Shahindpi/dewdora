@@ -3,22 +3,18 @@
 namespace App\Http\Controllers\Api\Public;
 
 use App\Http\Controllers\Controller;
-
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Cache;
-
-use App\Models\Post;
-use App\Models\Category;
-use App\Models\Brand;
-use App\Models\AffiliateProduct;
-
-use App\Http\Resources\Api\PostResource;
-use App\Http\Resources\Api\CategoryResource;
-use App\Http\Resources\Api\BrandResource;
 use App\Http\Resources\Api\AffiliateProductResource;
-
+use App\Http\Resources\Api\BrandResource;
+use App\Http\Resources\Api\CategoryResource;
+use App\Http\Resources\Api\PostResource;
+use App\Models\AffiliateProduct;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Post;
 use App\Services\CacheService;
 use App\Support\ApiResponse;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 
 class HomepageController extends Controller
 {
@@ -40,13 +36,13 @@ class HomepageController extends Controller
 
                 $heroProducts = AffiliateProduct::query()
                     ->where('status', true)
-                    ->where('featured', true)
                     ->with([
                         'brand',
                         'category',
                         'seoMeta.seoable',
                     ])
-                    ->orderByDesc('rating')
+                    ->orderByDesc('featured')
+                    ->orderByDesc('created_at')
                     ->limit(4)
                     ->get();
 
@@ -95,8 +91,11 @@ class HomepageController extends Controller
 
                 $categories = Category::query()
                     ->where('status', true)
-                    ->withCount(['posts' => fn ($query) => $query->published()])
-                    ->orderByDesc('posts_count')
+                    ->withCount([
+                        'posts' => fn ($query) => $query->published(),
+                        'affiliateProducts' => fn ($query) => $query->where('status', true),
+                    ])
+                    ->orderByDesc('affiliate_products_count')
                     ->limit(6)
                     ->get();
 
@@ -108,7 +107,7 @@ class HomepageController extends Controller
 
                 $brands = Brand::query()
                     ->where('status', true)
-                    ->withCount('affiliateProducts')
+                    ->withCount(['affiliateProducts' => fn ($query) => $query->where('status', true)])
                     ->orderByDesc('affiliate_products_count')
                     ->limit(8)
                     ->get();

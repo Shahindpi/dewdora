@@ -2,37 +2,32 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiErrorMessage } from "@/lib/api-error";
 import {
   deleteAdminProduct,
   getAdminProducts,
 } from "@/services/admin-products";
-import type { PaginationMeta } from "@/types/api";
 import type { AffiliateProduct } from "@/types/product";
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<AffiliateProduct[]>([]);
-  const [meta, setMeta] = useState<PaginationMeta>();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [revision, setRevision] = useState(0);
-  useEffect(() => {
-    getAdminProducts({ page, search: search || undefined })
-      .then((result) => {
-        setProducts(result.products);
-        setMeta(result.meta);
-      })
-      .catch((error) =>
-        toast.error(apiErrorMessage(error, "Could not load products.")),
-      );
-  }, [page, search, revision]);
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["admin-products", page, search, revision],
+    queryFn: () => getAdminProducts({ page, search: search || undefined }),
+  });
+  const products = data?.products || [];
+  const meta = data?.meta;
   async function remove(product: AffiliateProduct) {
     if (!window.confirm(`Delete ${product.name}?`)) return;
     try {
       await deleteAdminProduct(product.id);
       toast.success("Product deleted.");
+      if (products.length === 1 && page > 1) setPage(page - 1);
       setRevision((value) => value + 1);
     } catch (error) {
       toast.error(apiErrorMessage(error, "Could not delete product."));
@@ -139,7 +134,9 @@ export default function ProductsPage() {
             ))}
           </tbody>
         </table>
-        {!products.length && (
+        {isLoading && <p className="p-6">Loading products…</p>}
+        {error && <p role="alert" className="p-6 text-destructive">{apiErrorMessage(error, "Could not load products.")} <button onClick={() => refetch()} className="underline">Retry</button></p>}
+        {!isLoading && !error && !products.length && (
           <p className="p-6 text-muted-foreground">No products found.</p>
         )}
       </div>

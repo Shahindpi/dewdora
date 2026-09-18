@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import { toast } from "sonner";
 import MediaPickerModal from "@/components/admin/media/media-picker-modal";
@@ -22,6 +23,7 @@ import type { Category } from "@/types/category";
 
 export function ProductForm({ product }: { product?: AffiliateProduct }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [brands, setBrands] = useState<Brand[]>([]);
   const [networks, setNetworks] = useState<AffiliateNetwork[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -34,6 +36,9 @@ export function ProductForm({ product }: { product?: AffiliateProduct }) {
   );
   const [mediaOpen, setMediaOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [brandId, setBrandId] = useState(String(product?.brand_id || ""));
+  const [networkId, setNetworkId] = useState(String(product?.affiliate_network_id || ""));
+  const [categoryId, setCategoryId] = useState(String(product?.category_id || ""));
 
   useEffect(() => {
     getProductOptions()
@@ -82,6 +87,8 @@ export function ProductForm({ product }: { product?: AffiliateProduct }) {
     try {
       if (product) await updateAdminProduct(product.id, payload);
       else await createAdminProduct(payload);
+      await queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin-product"] });
       toast.success(product ? "Product updated." : "Product created.");
       router.push("/admin/products");
       router.refresh();
@@ -93,7 +100,6 @@ export function ProductForm({ product }: { product?: AffiliateProduct }) {
   }
 
   const input = "mt-2 w-full rounded-lg border bg-background p-3";
-  const option = (value?: number | null) => (value ? String(value) : "");
   return (
     <>
       <form
@@ -123,7 +129,8 @@ export function ProductForm({ product }: { product?: AffiliateProduct }) {
               Brand
               <select
                 name="brand_id"
-                defaultValue={option(product?.brand_id)}
+                value={brandId}
+                onChange={event => setBrandId(event.target.value)}
                 className={input}
               >
                 <option value="">No brand</option>
@@ -138,7 +145,8 @@ export function ProductForm({ product }: { product?: AffiliateProduct }) {
               Affiliate network
               <select
                 name="affiliate_network_id"
-                defaultValue={option(product?.affiliate_network_id)}
+                value={networkId}
+                onChange={event => setNetworkId(event.target.value)}
                 className={input}
               >
                 <option value="">No network</option>
@@ -153,7 +161,8 @@ export function ProductForm({ product }: { product?: AffiliateProduct }) {
               Category
               <select
                 name="category_id"
-                defaultValue={option(product?.category_id)}
+                value={categoryId}
+                onChange={event => setCategoryId(event.target.value)}
                 className={input}
               >
                 <option value="">No category</option>

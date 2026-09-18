@@ -18,7 +18,8 @@ import { Button } from "@/components/ui/button";
 import { postSchema, PostFormValues } from "@/schemas/post-schema";
 
 import api from "@/lib/axios";
-import { getCategories } from "@/services/categories";
+import { allResourceOptions } from "@/services/admin-resources";
+import type { Category } from "@/types/category";
 
 import { createPost, updatePost } from "@/services/posts";
 
@@ -54,6 +55,9 @@ interface Props {
 export default function PostForm({ mode, post }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  // Keep the created ID if a later relationship/SEO request fails, so Retry
+  // updates that post instead of creating a duplicate.
+  const [savedId, setSavedId] = useState(post?.id);
 
   /*
   |--------------------------------------------------------------------------
@@ -81,15 +85,11 @@ export default function PostForm({ mode, post }: Props) {
   );
   const { data: availableTags = [] } = useQuery({
     queryKey: ["post-tags"],
-    queryFn: async () =>
-      (await api.get("/admin/tags", { params: { per_page: 50 } })).data
-        .data as { id: number; name: string }[],
+    queryFn: () => allResourceOptions<{ id: number; name: string }>("tags"),
   });
   const { data: availableProducts = [] } = useQuery({
     queryKey: ["post-products"],
-    queryFn: async () =>
-      (await api.get("/admin/affiliate-products", { params: { per_page: 100 } })).data
-        .data as { id: number; name: string }[],
+    queryFn: () => allResourceOptions<{ id: number; name: string }>("affiliate-products"),
   });
 
   const [featuredImage, setFeaturedImage] = useState<string | null>(
@@ -125,7 +125,7 @@ export default function PostForm({ mode, post }: Props) {
 
   const { data: categories = [] } = useQuery({
     queryKey: ["post-categories"],
-    queryFn: getCategories,
+    queryFn: () => allResourceOptions<Category>("categories"),
   });
 
   const title = useWatch({ control, name: "title" });
@@ -170,10 +170,11 @@ export default function PostForm({ mode, post }: Props) {
       };
 
       const saved =
-        mode === "edit" && post?.id
-          ? await updatePost(post.id, payload)
+        savedId
+          ? await updatePost(savedId, payload)
           : await createPost(payload);
       if (saved?.id) {
+        setSavedId(saved.id);
         await api.put(`/admin/posts/${saved.id}/tags`, { tag_ids: tagIds });
         await api.put(`/admin/posts/${saved.id}/affiliate-products`, {
           products: productIds.map((id, sort_order) => ({

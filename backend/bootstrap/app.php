@@ -1,19 +1,18 @@
 <?php
 
-
 use App\Http\Middleware\AdminMiddleware;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Auth\AuthenticationException;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
-use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -39,11 +38,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
 
-        $middleware->statefulApi();
-
-        $middleware->appendToGroup('api', [
-            \Illuminate\Session\Middleware\StartSession::class,
-        ]);
+        // The Next.js client uses Sanctum bearer tokens, not cookie sessions.
+        // Keep API authentication stateless so browser Origin headers do not
+        // switch login and writes into Sanctum's session/CSRF workflow.
 
         $middleware->alias([
             'admin' => AdminMiddleware::class,
@@ -59,13 +56,13 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (
             ValidationException $e,
-            \Illuminate\Http\Request $request
+            Request $request
         ) {
             if ($request->is('api/*')) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation failed.',
-                    'errors'  => $e->errors(),
+                    'errors' => $e->errors(),
                 ], 422);
             }
         });
@@ -78,7 +75,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (
             AuthenticationException $e,
-            \Illuminate\Http\Request $request
+            Request $request
         ) {
             if ($request->is('api/*')) {
                 return response()->json([
@@ -96,7 +93,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (
             AccessDeniedHttpException $e,
-            \Illuminate\Http\Request $request
+            Request $request
         ) {
             if ($request->is('api/*')) {
                 return response()->json([
@@ -114,7 +111,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (
             NotFoundHttpException $e,
-            \Illuminate\Http\Request $request
+            Request $request
         ) {
             if (! $request->is('api/*')) {
                 return null;
@@ -136,7 +133,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (
             HttpExceptionInterface $e,
-            \Illuminate\Http\Request $request
+            Request $request
         ) {
             if ($request->is('api/*')) {
                 return response()->json([
@@ -154,7 +151,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (
             Throwable $e,
-            \Illuminate\Http\Request $request
+            Request $request
         ) {
             if ($request->is('api/*')) {
                 return response()->json([
