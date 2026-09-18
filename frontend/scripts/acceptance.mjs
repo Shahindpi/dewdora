@@ -101,6 +101,25 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
   await page.getByRole('button',{name:'Add banner'}).click();await page.locator('input[name=heading]').fill('Browser banner '+stamp);await page.locator('input[name=sort_order]').fill('1');await page.getByRole('button',{name:'Save',exact:true}).click();await page.getByRole('heading',{name:'Browser banner '+stamp}).waitFor();await page.getByRole('button',{name:'Delete',exact:true}).last().click();
   await page.goto(base+'/admin/categories');const sizePending=page.waitForResponse(r=>r.url().includes('per_page=all'));await page.getByRole('combobox',{name:'Items per page'}).selectOption('all');const sizeResponse=await sizePending;if(sizeResponse.status()!==200)throw Error('All page-size request failed');
  });
+ await check('Admin page sizes, persisted theme and sticky navigation',async()=>{
+  for(const route of ['posts','categories','tags','brands','networks','products','users','comments','newsletter','contacts','media']){
+    await page.goto(base+'/admin/'+route);
+    const selector=page.getByRole('combobox',{name:'Items per page'});
+    await selector.waitFor();
+    const choices=await selector.locator('option').allTextContents();
+    if(choices.join(',')!=='10,20,50,All')throw Error(route+' page sizes missing');
+  }
+  await page.goto(base+'/admin');
+  const toggle=page.getByRole('combobox',{name:'Dashboard theme'});await toggle.selectOption('dark');
+  await page.waitForFunction(()=>document.documentElement.classList.contains('dark'));
+  await page.reload();await page.getByRole('combobox',{name:'Dashboard theme'}).waitFor();
+  if(!await page.evaluate(()=>document.documentElement.classList.contains('dark')))throw Error('Dark mode was not persisted');
+  const adminSticky=await page.locator('header').first().evaluate(node=>getComputedStyle(node).position);
+  if(adminSticky!=='sticky')throw Error('Admin header is not sticky');
+  await page.getByRole('combobox',{name:'Dashboard theme'}).selectOption('light');
+  await page.goto(base+'/');const publicSticky=await page.locator('header').first().evaluate(node=>getComputedStyle(node).position);
+  if(publicSticky!=='sticky')throw Error('Public navigation is not sticky');
+ });
  await check('Media UI upload, list, delete',async()=>{
    await page.goto(base+'/admin/media');await page.getByRole('heading',{name:'Media library'}).waitFor();
    const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL/nwAAAABJRU5ErkJggg==','base64');
