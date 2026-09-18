@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\AdminPageSize;
 use App\Models\Brand;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -46,10 +47,7 @@ class BrandController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $perPage = min(
-            max($request->integer('per_page', 15), 1),
-            100
-        );
+        $perPage = AdminPageSize::resolve($request, $query, 15);
 
         $brands = $query->paginate($perPage);
 

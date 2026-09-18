@@ -161,4 +161,28 @@ class AdminApiTest extends TestCase
         $token = $user->createToken('test')->plainTextToken;
         $this->withToken($token)->getJson('/api/v1/admin/users')->assertForbidden();
     }
+    public function test_homepage_carousel_banner_and_all_page_sizes(): void
+    {
+        $this->login();
+        $first = $this->postJson('/api/v1/admin/affiliate-products', ['name' => 'First', 'affiliate_url' => 'https://example.com/first', 'status' => true])->assertCreated()->json('data.id');
+        $last = $this->postJson('/api/v1/admin/affiliate-products', ['name' => 'Last', 'affiliate_url' => 'https://example.com/last', 'status' => true])->assertCreated()->json('data.id');
+        $this->getJson('/api/v1/admin/affiliate-products?per_page=all')->assertOk()->assertJsonCount(2, 'data')->assertJsonPath('meta.total', 2);
+        $this->getJson('/api/v1/public/homepage')->assertOk()->assertJsonPath('data.carousel_products.0.id', $last)->assertJsonPath('data.carousel_products.1.id', $first);
+        $payload = ['heading' => 'Autumn picks', 'description' => 'Shop our picks', 'background_image' => 'uploads/images/hero.png', 'cta_text' => 'Explore', 'cta_url' => '/products', 'enabled' => true, 'sort_order' => 2];
+        $id = $this->postJson('/api/v1/admin/hero-banners', $payload)->assertCreated()->json('data.id');
+        $this->getJson('/api/v1/public/homepage')->assertOk()->assertJsonPath('data.hero_banners.0.heading', 'Autumn picks');
+        $this->getJson('/api/v1/admin/hero-banners?per_page=all')->assertOk()->assertJsonPath('meta.total', 1);
+        $this->putJson('/api/v1/admin/hero-banners/'.$id, [...$payload, 'enabled' => false])->assertOk();
+        $this->getJson('/api/v1/public/homepage')->assertOk()->assertJsonCount(0, 'data.hero_banners');
+        $this->deleteJson('/api/v1/admin/hero-banners/'.$id)->assertOk();
+    }
+
+    public function test_public_analytics_setting_is_configuration_only(): void
+    {
+        $this->login();
+        $this->putJson('/api/v1/admin/settings', ['site_name' => 'Dewdora', 'google_analytics_id' => 'G-TEST12345'])->assertOk();
+        $this->getJson('/api/v1/public/settings')->assertOk()->assertJsonPath('data.google_analytics_id', 'G-TEST12345');
+        $this->putJson('/api/v1/admin/settings', ['site_name' => 'Dewdora', 'google_analytics_id' => 'not-a-measurement-id'])->assertUnprocessable();
+    }
+
 }

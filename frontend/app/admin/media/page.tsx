@@ -1,23 +1,25 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
 import Image from "next/image";
+import { PageSizeSelect, type PageSize } from "@/components/admin/page-size";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 type Media = { name: string; path: string; url: string; size: number };
 export default function Page() {
   const [items, setItems] = useState<Media[]>([]);
   const [page, setPage] = useState(1);
+  const [size, setSize] = useState<PageSize>(20);
   const [total, setTotal] = useState(1);
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     api
-      .get("/admin/media", { params: { page } })
+      .get("/admin/media", { params: { page, per_page: size } })
       .then((r) => {
         setItems(r.data.data?.media || []);
         setTotal(r.data.data?.pagination?.last_page || 1);
       })
       .catch(() => toast.error("Could not load media"));
-  }, [page, revision]);
+  }, [page, size, revision]);
   async function upload(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
@@ -51,11 +53,12 @@ export default function Page() {
           Upload image
         </button>
       </form>
+      <div className="mt-4"><PageSizeSelect value={size} onChange={value => { setSize(value); setPage(1); }} /></div>
       <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((item) => (
           <div
             key={item.path}
-            className="overflow-hidden rounded-xl border bg-white"
+            className="overflow-hidden rounded-xl border bg-background"
           >
               <Image
                 unoptimized

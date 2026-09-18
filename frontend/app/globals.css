@@ -141,3 +141,8 @@
     @apply font-sans;
   }
 }
+
+/* Older CMS panels still use light utility classes; keep their surfaces and text legible in dark mode. */
+.dark .admin-area .bg-white, .dark .admin-area .bg-slate-50 { background-color: var(--background); color: var(--foreground); }
+.dark .admin-area .text-slate-500, .dark .admin-area .text-slate-600 { color: var(--muted-foreground); }
+.dark .admin-area input, .dark .admin-area textarea, .dark .admin-area select { background-color: var(--background); color: var(--foreground); }

@@ -73,10 +73,7 @@ class MediaController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $perPage = min(
-            max((int) $request->input('per_page', 20), 1),
-            100
-        );
+        $perPage = $request->input('per_page') === 'all' ? max(1, $files->count()) : min(max($request->integer('per_page', 20), 1), 100);
 
         $page = max((int) $request->input('page', 1), 1);
 

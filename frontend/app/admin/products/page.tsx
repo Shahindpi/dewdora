@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
+import { PageSizeSelect, type PageSize } from "@/components/admin/page-size";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiErrorMessage } from "@/lib/api-error";
@@ -14,11 +15,12 @@ import type { AffiliateProduct } from "@/types/product";
 
 export default function ProductsPage() {
   const [page, setPage] = useState(1);
+  const [size, setSize] = useState<PageSize>(20);
   const [search, setSearch] = useState("");
   const [revision, setRevision] = useState(0);
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["admin-products", page, search, revision],
-    queryFn: () => getAdminProducts({ page, search: search || undefined }),
+    queryKey: ["admin-products", page, search, size, revision],
+    queryFn: () => getAdminProducts({ page, search: search || undefined, per_page: size }),
   });
   const products = data?.products || [];
   const meta = data?.meta;
@@ -59,6 +61,7 @@ export default function ProductsPage() {
         placeholder="Search products"
         className="mt-6 w-full max-w-sm rounded-lg border p-3"
       />
+      <div className="mt-4"><PageSizeSelect value={size} onChange={value => { setSize(value); setPage(1); }} /></div>
       <div className="mt-6 overflow-x-auto rounded-2xl border bg-background">
         <table className="w-full min-w-[900px] text-left text-sm">
           <thead className="bg-muted/50">

@@ -11,6 +11,7 @@ use App\Models\AffiliateProduct;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Post;
+use App\Models\HeroBanner;
 use App\Services\CacheService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -33,6 +34,14 @@ class HomepageController extends Controller
                 | Hero Featured Products
                 |--------------------------------------------------------------------------
                 */
+
+                $carouselProducts = AffiliateProduct::query()
+                    ->where('status', true)
+                    ->with(['brand', 'affiliateNetwork', 'category', 'seoMeta'])
+                    ->orderByDesc('created_at')
+                    ->orderByDesc('id')
+                    ->limit(24)
+                    ->get();
 
                 $heroProducts = AffiliateProduct::query()
                     ->where('status', true)
@@ -126,6 +135,8 @@ class HomepageController extends Controller
                 ];
 
                 return [
+                    'carousel_products' => AffiliateProductResource::collection($carouselProducts),
+                    'hero_banners' => HeroBanner::query()->where('enabled', true)->orderBy('sort_order')->orderBy('id')->get()->map(fn ($banner) => $banner->publicData()),
                     'hero_products' => AffiliateProductResource::collection($heroProducts),
 
                     'popular_posts' => PostResource::collection($popularPosts),

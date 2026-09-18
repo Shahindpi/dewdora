@@ -9,13 +9,16 @@ import PostSearch from "@/components/admin/post-search";
 import PostStatusFilter from "@/components/admin/post-status-filter";
 import PostsTable from "@/components/admin/posts-table";
 
-import { useAppSelector } from "@/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 import { getPosts } from "@/services/posts";
+import { setPageSize } from "@/store/slices/postFiltersSlice";
+import { PageSizeSelect } from "@/components/admin/page-size";
 import TablePagination from "@/components/admin/table-pagination";
 import { buttonVariants } from "@/components/ui/button";
 
 export default function PostsPage() {
+  const dispatch = useAppDispatch();
   const filters = useAppSelector((state) => state.postFilters);
 
   const { data: posts, isLoading } = useQuery({
@@ -42,6 +45,7 @@ export default function PostsPage() {
         <PostStatusFilter />
       </div>
 
+      <PageSizeSelect value={filters.per_page} onChange={value => dispatch(setPageSize(value))} />
       {isLoading ? (
         <div className="h-80 rounded-xl bg-muted animate-pulse" />
       ) : (

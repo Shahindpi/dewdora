@@ -18,7 +18,7 @@ export async function allResourceOptions<T>(endpoint: ResourceEndpoint | "affili
   return items;
 }
 
-export async function listResources(endpoint: ResourceEndpoint, params: { page: number; search: string }) {
+export async function listResources(endpoint: ResourceEndpoint, params: { page: number; search: string; per_page?: number | "all" }) {
   const { data } = await api.get<ApiResponse<ResourceRecord[]>>(`/admin/${endpoint}`, { params });
   if (!Array.isArray(data.data)) throw new Error("The server returned an invalid resource list.");
   return { items: data.data, meta: data.meta as PaginationMeta | undefined };

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\AdminPageSize;
 use App\Http\Requests\ResetUserPasswordRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
@@ -18,9 +19,7 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = min(max($request->integer('per_page', 15), 1), 100);
-
-        $users = User::query()
+        $query = User::query()
             ->with('role')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = trim($request->string('search')->value());
@@ -32,8 +31,8 @@ class UserController extends Controller
             })
             ->when($request->filled('role_id'), fn ($query) => $query->where('role_id', $request->integer('role_id')))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->boolean('status')))
-            ->latest()
-            ->paginate($perPage);
+            ->latest();
+        $users = $query->paginate(AdminPageSize::resolve($request, $query, 15));
 
         return UserResource::collection($users)->additional([
             'success' => true,

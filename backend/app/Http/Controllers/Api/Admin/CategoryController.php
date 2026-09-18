@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\AdminPageSize;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,12 +33,7 @@ class CategoryController extends Controller
             $query->where('name', 'like', "%{$search}%");
         }
 
-        $categories = $query->paginate(
-            min(
-                max((int) $request->input('per_page', 20), 1),
-                100
-            )
-        );
+        $categories = $query->paginate(AdminPageSize::resolve($request, $query, 20));
 
         return ApiResponse::paginated(
             CategoryResource::collection($categories),

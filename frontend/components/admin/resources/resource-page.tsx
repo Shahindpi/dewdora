@@ -2,6 +2,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { listResources, saveResource, deleteResource, type ResourceEndpoint, type ResourceRecord } from "@/services/admin-resources";
 import { toast } from "sonner";
+import { PageSizeSelect, type PageSize } from "@/components/admin/page-size";
 import type { PaginationMeta } from "@/types/api";
 
 type Field = {
@@ -136,7 +137,7 @@ function Editor({
   return (
     <form
       onSubmit={save}
-      className="mt-6 grid max-w-3xl gap-5 rounded-xl border bg-white p-6 md:grid-cols-2"
+      className="mt-6 grid max-w-3xl gap-5 rounded-xl border bg-background p-6 md:grid-cols-2"
     >
       {config.fields.map((field) => (
         <label
@@ -206,6 +207,7 @@ export function ResourcePage({ resource }: { resource: string }) {
   const [items, setItems] = useState<RecordItem[]>([]);
   const [meta, setMeta] = useState<PaginationMeta>();
   const [page, setPage] = useState(1);
+  const [size, setSize] = useState<PageSize>(20);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<RecordItem | "new" | null>(null);
   const [loading, setLoading] = useState(true);
@@ -214,7 +216,7 @@ export function ResourcePage({ resource }: { resource: string }) {
   useEffect(() => {
     if (!config) return;
     let active = true;
-    listResources(config.endpoint, { page, search })
+    listResources(config.endpoint, { page, search, per_page: size })
       .then((r) => {
         if (active) {
           setItems(r.items);
@@ -231,7 +233,7 @@ export function ResourcePage({ resource }: { resource: string }) {
     return () => {
       active = false;
     };
-  }, [config, page, search, editing, revision]);
+  }, [config, page, search, size, editing, revision]);
   if (!config) return <p>Resource not found.</p>;
   async function remove(item: RecordItem) {
     if (!window.confirm(`Delete ${item.name || item.id}?`)) return;
@@ -265,8 +267,9 @@ export function ResourcePage({ resource }: { resource: string }) {
           setPage(1);
         }}
         placeholder={`Search ${config.title.toLowerCase()}`}
-        className="mt-6 w-full max-w-sm rounded-lg border p-3"
+        className="mt-6 w-full max-w-sm rounded-lg border bg-background p-3"
       />
+      <div className="mt-4"><PageSizeSelect value={size} onChange={value => { setSize(value); setPage(1); }} /></div>
       {editing && (
         <Editor
           key={editing === "new" ? "new" : editing.id}
@@ -276,9 +279,9 @@ export function ResourcePage({ resource }: { resource: string }) {
           onCancel={() => setEditing(null)}
         />
       )}
-      <div className="mt-6 overflow-x-auto rounded-xl border bg-white">
+      <div className="mt-6 overflow-x-auto rounded-xl border bg-background">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50">
+          <thead className="bg-muted/50">
             <tr>
               <th className="p-4">Name</th>
               <th className="p-4">Slug</th>

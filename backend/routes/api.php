@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\CommentController as AdminCommentController;
 use App\Http\Controllers\Api\Admin\ContactMessageController;
 use App\Http\Controllers\Api\Admin\DashboardController;
+use App\Http\Controllers\Api\Admin\HeroBannerController;
 use App\Http\Controllers\Api\Admin\MediaController;
 use App\Http\Controllers\Api\Admin\NewsletterSubscriberController;
 use App\Http\Controllers\Api\Admin\PostController;
@@ -579,6 +580,8 @@ Route::prefix('v1')->group(function () {
                 ]);
 
                 Route::apiResource('posts', PostController::class);
+
+                Route::apiResource('hero-banners', HeroBannerController::class)->parameters(['hero-banners' => 'heroBanner']);
 
                 /*
                 |--------------------------------------------------------------------------

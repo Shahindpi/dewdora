@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\AdminPageSize;
 use App\Http\Requests\StoreRoleRequest;
 use App\Http\Requests\UpdateRoleRequest;
 use App\Http\Resources\RoleResource;
@@ -15,10 +16,10 @@ class RoleController extends Controller
 {
     public function index(Request $request)
     {
-        $roles = Role::query()->withCount('users')
+        $query = Role::query()->withCount('users')
             ->when($request->filled('search'), fn ($query) => $query->where('name', 'like', '%'.$request->string('search').'%'))
-            ->orderBy('name')
-            ->paginate(min(max($request->integer('per_page', 15), 1), 100));
+            ->orderBy('name');
+        $roles = $query->paginate(AdminPageSize::resolve($request, $query, 15));
 
         return RoleResource::collection($roles)
             ->additional(['success' => true, 'message' => 'Roles retrieved successfully.']);

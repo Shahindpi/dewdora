@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\AdminPageSize;
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Http\Resources\Api\PostResource;
@@ -83,10 +84,7 @@ class PostController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $perPage = min(
-            max((int) $request->input('per_page', 15), 1),
-            100
-        );
+        $perPage = AdminPageSize::resolve($request, $query, 15);
 
         $posts = $query->paginate($perPage);
 

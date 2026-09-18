@@ -7,6 +7,7 @@ import type { PostFormValues } from "@/schemas/post-schema";
 
 interface PostFilters {
   page?: number;
+  per_page?: number | "all";
   search?: string;
   status?: string;
   category_id?: number;
