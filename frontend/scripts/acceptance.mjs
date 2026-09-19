@@ -85,6 +85,7 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
   const carousel=page.getByRole('region',{name:'Popular Affiliate Products'});
   const cards=carousel.getByRole('article');
   if(await cards.count()<8)throw Error('Expected eight real database products in carousel');
+  await cards.first().scrollIntoViewIfNeeded();
   const first=await cards.nth(0).boundingBox(), sixth=await cards.nth(5).boundingBox(), seventh=await cards.nth(6).boundingBox();
   if(!first||!sixth||!seventh||seventh.x<sixth.x+sixth.width)throw Error('Desktop carousel should show six cards');
   const image=cards.first().locator('img');await image.waitFor();if(!await image.evaluate(img=>img.complete&&img.naturalWidth>0))throw Error('Carousel product image did not load');
@@ -149,7 +150,7 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
  });
  await page.goto(base+'/');await page.screenshot({path:path.join(output, 'desktop.png'),fullPage:true});
  await check('Mobile admin navigation and no horizontal overflow',async()=>{await page.setViewportSize({width:390,height:844});await page.goto(base+'/admin/users');await page.getByRole('heading',{name:'Users',exact:true}).waitFor();await page.getByRole('row').filter({hasText:email}).waitFor();if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Horizontal overflow');await page.getByRole('button',{name:'Open admin navigation'}).click();await page.getByRole('dialog').getByRole('link',{name:'Categories',exact:true}).waitFor();await page.screenshot({path:path.join(output, 'mobile-admin.png'),fullPage:true});});
- await check('Mobile public homepage',async()=>{await page.goto(base+'/');await page.locator('h1').waitFor();if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Horizontal overflow');await page.screenshot({path:path.join(output,'mobile-home.png'),fullPage:true});});
+ await check('Mobile public homepage',async()=>{await page.goto(base+'/');await page.locator('h1').waitFor();const latest=page.getByRole('region',{name:'Latest Affiliate Products'}),cards=latest.getByRole('article');const first=await cards.first().boundingBox(),second=await cards.nth(1).boundingBox();if(!first||!second||first.width<300||second.x<first.x+first.width)throw Error('Mobile latest rail should show one card');await latest.getByLabel('Scroll latest products').evaluate(node=>{node.scrollLeft=node.clientWidth;});await page.waitForFunction(()=>document.querySelector('[aria-label="Scroll latest products"]')?.scrollLeft>0);if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Horizontal overflow');await page.screenshot({path:path.join(output,'mobile-home.png'),fullPage:true});});
  await check('Homepage sections visibility persists through the API',async()=>{
    await page.goto(base+'/admin/homepage-settings');await page.getByRole('heading',{name:'Homepage sections'}).waitFor();
    const toggle=page.getByRole('checkbox',{name:'Show Buying Guides / How-tos'});await toggle.uncheck();
