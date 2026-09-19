@@ -66,7 +66,7 @@ class DemoSeedAndAnalyticsTest extends TestCase
         $this->assertSame($product->brand_id, AffiliateEvent::where('session_id', $session)->firstOrFail()->brand_id);
         $token = $this->postJson('/api/v1/auth/login', ['email' => 'admin@example.com', 'password' => 'Admin@1234567'])->assertOk()->json('data.token');
         $this->assertNotEmpty($token);
-        foreach (['users', 'roles', 'posts', 'products', 'categories', 'tags', 'brands', 'affiliate-networks', 'hero-banners', 'media', 'dashboard'] as $resource) {
+        foreach (['users', 'roles', 'posts', 'affiliate-products', 'categories', 'tags', 'brands', 'affiliate-networks', 'hero-banners', 'media', 'dashboard'] as $resource) {
             $this->withToken($token)->getJson('/api/v1/admin/'.$resource)->assertOk();
         }
         foreach (['posts', 'products', 'categories', 'tags', 'brands', 'affiliate-networks', 'homepage'] as $resource) {

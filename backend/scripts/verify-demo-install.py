@@ -2,6 +2,7 @@
 
 import json
 import os
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 BASE = os.environ.get("DEWDORA_API_URL", "http://127.0.0.1:8000/api/v1").rstrip("/")
@@ -14,9 +15,12 @@ def request(path, payload=None, token=None):
     if token:
         headers["Authorization"] = f"Bearer {token}"
     req = Request(BASE + path, data=json.dumps(payload).encode() if payload is not None else None, headers=headers)
-    with urlopen(req, timeout=20) as response:
-        assert response.status == 200, (path, response.status)
-        return json.load(response)["data"]
+    try:
+        with urlopen(req, timeout=20) as response:
+            assert response.status == 200, (path, response.status)
+            return json.load(response)["data"]
+    except HTTPError as exc:
+        raise AssertionError(f"{path}: HTTP {exc.code}: {exc.read().decode()[:400]}") from exc
 
 
 login = request("/auth/login", {"email": "admin@example.com", "password": "Admin@1234567"})
@@ -29,7 +33,7 @@ assert len(homepage["hero_banners"]) >= 1
 assert homepage["statistics"]["products"] == 16
 with urlopen(homepage["carousel_products"][0]["featured_image"], timeout=20) as image:
     assert image.status == 200 and image.headers.get_content_type() == "image/png"
-for path in ("users", "roles", "posts", "products", "categories", "tags", "brands", "affiliate-networks", "hero-banners", "media", "dashboard", "affiliate-analytics"):
+for path in ("users", "roles", "posts", "affiliate-products", "categories", "tags", "brands", "affiliate-networks", "hero-banners", "media", "dashboard", "affiliate-analytics"):
     request("/admin/" + path, token=token)
 for path in ("posts", "products", "categories", "tags", "brands", "affiliate-networks"):
     request("/public/" + path)
