@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { AuthContext } from "@/contexts/auth-context";
 
@@ -24,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const authenticated = !!user;
 
@@ -44,11 +46,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setStoredUser(currentUser);
     } catch {
       clearAuthStorage();
+      queryClient.clear();
       setUser(null);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [queryClient]);
 
   const login = useCallback(async (email: string, password: string) => {
     const response = await loginRequest({ email, password });
@@ -61,23 +64,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     try {
       await logoutRequest();
+    } catch {
+      // A failed network request must not leave a local session active.
     } finally {
       clearAuthStorage();
+      queryClient.clear();
       setUser(null);
 
       router.replace("/auth/login");
     }
-  }, [router]);
+  }, [router, queryClient]);
 
   useEffect(() => {
     const unauthorized = () => {
+      queryClient.clear();
       setUser(null);
       router.replace("/auth/login");
     };
     window.addEventListener("dewdora:unauthorized", unauthorized);
     return () =>
       window.removeEventListener("dewdora:unauthorized", unauthorized);
-  }, [router]);
+  }, [router, queryClient]);
 
   useEffect(() => {
     void Promise.resolve().then(refreshUser);

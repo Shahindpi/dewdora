@@ -9,6 +9,7 @@ import { AuthProvider } from "@/providers/auth-provider";
 import { ReduxProvider } from "@/providers/redux-provider";
 
 import { Toaster } from "sonner";
+import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 
 export default function RootLayout({
   children,
@@ -29,6 +30,7 @@ export default function RootLayout({
           </ReduxProvider>
         </ThemeProvider>
       </body>
+      <GoogleAnalytics />
     </html>
   );
 }

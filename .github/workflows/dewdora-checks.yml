@@ -121,7 +121,7 @@ jobs:
           php artisan storage:link
           php artisan serve --host=127.0.0.1 --port=8000 > /tmp/dewdora-php.log 2>&1 & php_pid=$!
           cd ../frontend
-          export NEXT_PUBLIC_SITE_URL=http://127.0.0.1:3000 NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api/v1 API_URL=http://127.0.0.1:8000/api/v1 NEXT_PUBLIC_STORAGE_URL=http://127.0.0.1:8000/storage
+          export NEXT_PUBLIC_GA_ID=G-TEST12345 NEXT_PUBLIC_SITE_URL=http://127.0.0.1:3000 NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api/v1 API_URL=http://127.0.0.1:8000/api/v1 NEXT_PUBLIC_STORAGE_URL=http://127.0.0.1:8000/storage
           npm run build
           npm run start -- -p 3000 -H 127.0.0.1 > /tmp/dewdora-next.log 2>&1 & next_pid=$!
           trap 'kill "$php_pid" "$next_pid" 2>/dev/null || true' EXIT

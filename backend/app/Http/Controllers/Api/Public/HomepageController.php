@@ -12,6 +12,8 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Post;
 use App\Models\HeroBanner;
+use App\Models\SiteSetting;
+use App\Support\HomepageSections;
 use App\Services\CacheService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -35,9 +37,25 @@ class HomepageController extends Controller
                 |--------------------------------------------------------------------------
                 */
 
-                $carouselProducts = AffiliateProduct::query()
+                $latestProducts = AffiliateProduct::query()
                     ->where('status', true)
                     ->with(['brand', 'affiliateNetwork', 'category', 'seoMeta'])
+                    ->orderByDesc('created_at')
+                    ->orderByDesc('id')
+                    ->limit(24)
+                    ->get();
+
+                // First-party clicks rank products; impressions and recency break ties.
+                // With no recorded events this falls back deterministically to newest first.
+                $popularProducts = AffiliateProduct::query()
+                    ->where('status', true)
+                    ->with(['brand', 'affiliateNetwork', 'category', 'seoMeta'])
+                    ->withCount([
+                        'events as clicks_count' => fn ($events) => $events->where('kind', 'click'),
+                        'events as impressions_count' => fn ($events) => $events->where('kind', 'impression'),
+                    ])
+                    ->orderByDesc('clicks_count')
+                    ->orderByDesc('impressions_count')
                     ->orderByDesc('created_at')
                     ->orderByDesc('id')
                     ->limit(24)
@@ -135,7 +153,10 @@ class HomepageController extends Controller
                 ];
 
                 return [
-                    'carousel_products' => AffiliateProductResource::collection($carouselProducts),
+                    'latest_products' => AffiliateProductResource::collection($latestProducts),
+                    'popular_products' => AffiliateProductResource::collection($popularProducts),
+                    'carousel_products' => AffiliateProductResource::collection($latestProducts),
+                    'homepage_sections' => HomepageSections::resolve(SiteSetting::first()?->homepage_sections),
                     'hero_banners' => HeroBanner::query()->where('enabled', true)->orderBy('sort_order')->orderBy('id')->get()->map(fn ($banner) => $banner->publicData()),
                     'hero_products' => AffiliateProductResource::collection($heroProducts),
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Menu, Sun, Moon, Monitor } from "lucide-react";
+import { ExternalLink, Menu, Sun, Moon, Monitor, LogOut } from "lucide-react";
 import Link from "next/link";
 import {
   Avatar,
@@ -16,7 +16,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export default function AdminHeader() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
 
   return (
@@ -37,7 +37,8 @@ export default function AdminHeader() {
           <ExternalLink className="ml-2 h-4 w-4" />
         </Link>
 
-        <div className="flex items-center gap-3">
+        <details className="relative">
+          <summary className="flex cursor-pointer list-none items-center gap-3 rounded-xl px-2 py-1 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring" aria-label="Account menu">
           <Avatar>
             <AvatarImage src={user?.avatar ?? ""} />
 
@@ -52,10 +53,12 @@ export default function AdminHeader() {
             </p>
 
             <p className="text-xs text-muted-foreground">
-              {user?.role?.name}
+              {user?.email}
             </p>
           </div>
-        </div>
+          </summary>
+          <div className="absolute right-0 mt-2 w-56 rounded-xl border bg-popover p-2 text-popover-foreground shadow-xl"><p className="truncate px-3 py-2 text-xs text-muted-foreground sm:hidden">{user?.email}</p><Link href="/admin/profile" className="block rounded-lg px-3 py-2 text-sm hover:bg-muted">Profile / Account</Link><button type="button" onClick={() => void logout()} className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted"><LogOut className="size-4" /> Logout</button></div>
+        </details>
       </div>
     </header>
   );

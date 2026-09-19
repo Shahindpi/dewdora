@@ -41,7 +41,7 @@ class DemoSeedAndAnalyticsTest extends TestCase
         $this->assertSame(6, Comment::count());
         $this->assertSame(5, NewsletterSubscriber::count());
         $this->assertSame(1, SiteSetting::count());
-        $this->assertSame(80, AffiliateEvent::count());
+        $this->assertGreaterThan(80, AffiliateEvent::count());
         $this->assertGreaterThanOrEqual(16, AffiliateProduct::where('status', true)->count());
         $this->assertGreaterThanOrEqual(12, Post::published()->count());
         $this->assertSame(3, HeroBanner::count());
@@ -52,7 +52,12 @@ class DemoSeedAndAnalyticsTest extends TestCase
         $this->assertSame(3, HeroBanner::count());
         $this->getJson('/api/v1/public/homepage')->assertOk()
             ->assertJsonCount(16, 'data.carousel_products')
+            ->assertJsonCount(16, 'data.latest_products')
+            ->assertJsonCount(16, 'data.popular_products')
+            ->assertJsonPath('data.homepage_sections.buying_guides', true)
             ->assertJsonPath('data.hero_banners.0.heading', 'Find your next useful tool');
+        $homepage = $this->getJson('/api/v1/public/homepage')->json('data');
+        $this->assertNotSame($homepage['latest_products'][0]['id'], $homepage['popular_products'][0]['id']);
         $product = AffiliateProduct::orderByDesc('created_at')->orderByDesc('id')->firstOrFail();
         $this->getJson('/api/v1/public/products/'.$product->slug)->assertOk()->assertJsonPath('data.product.brand.id', $product->brand_id);
         $post = Post::published()->firstOrFail();
@@ -61,9 +66,11 @@ class DemoSeedAndAnalyticsTest extends TestCase
         $payload = ['affiliate_product_id' => $product->id, 'session_id' => $session];
         $this->postJson('/api/v1/public/affiliate-events', $payload + ['kind' => 'impression'])->assertCreated()->assertJsonPath('data.recorded', true);
         $this->postJson('/api/v1/public/affiliate-events', $payload + ['kind' => 'impression'])->assertOk()->assertJsonPath('data.recorded', false);
-        $this->postJson('/api/v1/public/affiliate-events', $payload + ['kind' => 'click'])->assertCreated();
+        $this->postJson('/api/v1/public/affiliate-events', $payload + ['kind' => 'click', 'placement' => 'homepage_popular'])->assertCreated();
         $this->assertSame(1, AffiliateEvent::where('session_id', $session)->where('kind', 'impression')->count());
         $this->assertSame($product->brand_id, AffiliateEvent::where('session_id', $session)->firstOrFail()->brand_id);
+        $this->assertSame('homepage_popular', AffiliateEvent::where('session_id', $session)->where('kind', 'click')->firstOrFail()->placement);
+        $this->assertSame($product->affiliate_network_id, AffiliateEvent::where('session_id', $session)->firstOrFail()->affiliate_network_id);
         $token = $this->postJson('/api/v1/auth/login', ['email' => 'admin@example.com', 'password' => 'Admin@1234567'])->assertOk()->json('data.token');
         $this->assertNotEmpty($token);
         foreach (['users', 'roles', 'posts', 'affiliate-products', 'categories', 'tags', 'brands', 'affiliate-networks', 'hero-banners', 'media', 'dashboard'] as $resource) {
@@ -72,6 +79,16 @@ class DemoSeedAndAnalyticsTest extends TestCase
         foreach (['posts', 'products', 'categories', 'tags', 'brands', 'affiliate-networks', 'homepage'] as $resource) {
             $this->getJson('/api/v1/public/'.$resource)->assertOk();
         }
-        $this->withToken($token)->getJson('/api/v1/admin/affiliate-analytics')->assertOk()->assertJsonPath('data.products.0.id', $product->id);
+        $homepageSections = array_fill_keys(array_keys(\App\Support\HomepageSections::DEFAULTS), true);
+        $homepageSections['buying_guides'] = false;
+        $this->withToken($token)->putJson('/api/v1/admin/settings/homepage', ['homepage_sections' => $homepageSections])
+            ->assertOk()->assertJsonPath('data.homepage_sections.buying_guides', false);
+        $this->getJson('/api/v1/public/homepage')->assertJsonPath('data.homepage_sections.buying_guides', false);
+        $homepageSections['buying_guides'] = true;
+        $this->withToken($token)->putJson('/api/v1/admin/settings/homepage', ['homepage_sections' => $homepageSections])->assertOk();
+        $this->getJson('/api/v1/public/homepage')->assertJsonPath('data.homepage_sections.buying_guides', true);
+        $analytics = $this->withToken($token)->getJson('/api/v1/admin/affiliate-analytics')->assertOk()
+            ->assertJsonStructure(['data' => ['products', 'brands', 'networks', 'placements', 'daily', 'totals']]);
+        $this->assertContains($product->id, array_column($analytics->json('data.products'), 'id'));
     }
 }

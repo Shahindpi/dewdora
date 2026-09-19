@@ -18,13 +18,16 @@ class AffiliateEventController extends Controller
             'affiliate_product_id' => ['required', 'integer', Rule::exists('affiliate_products', 'id')->where('status', true)->whereNull('deleted_at')],
             'kind' => ['required', Rule::in(['impression', 'click'])],
             'session_id' => ['required', 'uuid'],
+            'placement' => ['nullable', 'string', 'max:60', 'regex:/^[a-z][a-z0-9_]*$/'],
         ]);
         $product = AffiliateProduct::query()->where('status', true)->findOrFail($data['affiliate_product_id']);
         $attributes = [
             'affiliate_product_id' => $product->id,
             'brand_id' => $product->brand_id,
+            'affiliate_network_id' => $product->affiliate_network_id,
             'kind' => $data['kind'],
             'session_id' => $data['session_id'],
+            'placement' => $data['placement'] ?? null,
         ];
         if ($data['kind'] === 'impression') {
             $event = AffiliateEvent::firstOrCreate([

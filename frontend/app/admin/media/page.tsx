@@ -11,6 +11,12 @@ export default function Page() {
   const [size, setSize] = useState<PageSize>(20);
   const [total, setTotal] = useState(1);
   const [revision, setRevision] = useState(0);
+  const [copiedPath, setCopiedPath] = useState<string | null>(null);
+  useEffect(() => {
+    if (!copiedPath) return;
+    const timeout = window.setTimeout(() => setCopiedPath(null), 2200);
+    return () => window.clearTimeout(timeout);
+  }, [copiedPath]);
   useEffect(() => {
     api
       .get("/admin/media", { params: { page, per_page: size } })
@@ -44,12 +50,19 @@ export default function Page() {
       toast.error("Image could not be deleted; it may be in use");
     }
   }
+  async function copyPath(item: Media) {
+    try {
+      await navigator.clipboard.writeText(item.path);
+      setCopiedPath(item.path);
+      toast.success("Copied");
+    } catch { setCopiedPath(null); toast.error("Could not copy image path. Check clipboard permission."); }
+  }
   return (
     <div>
       <h1 className="text-3xl font-bold">Media library</h1>
       <form onSubmit={upload} className="mt-6 flex flex-wrap gap-3">
         <input type="file" name="image" accept="image/*" required />
-        <button className="rounded-lg bg-[#165e46] px-5 py-2 text-white">
+        <button className="cursor-pointer rounded-lg bg-primary px-5 py-2 text-primary-foreground hover:opacity-90 focus-visible:outline-2 focus-visible:outline-ring">
           Upload image
         </button>
       </form>
@@ -58,7 +71,7 @@ export default function Page() {
         {items.map((item) => (
           <div
             key={item.path}
-            className="overflow-hidden rounded-xl border bg-background"
+            className="overflow-hidden rounded-xl border bg-background shadow-sm transition-shadow hover:shadow-md"
           >
               <Image
                 unoptimized
@@ -70,17 +83,10 @@ export default function Page() {
             />
             <div className="p-4 text-sm">
               <p className="truncate font-semibold">{item.name}</p>
-              <button
-                onClick={() =>
-                  navigator.clipboard
-                    .writeText(item.path)
-                    .then(() => toast.success("Path copied"))
-                }
-                className="mt-3 mr-3 text-[#165e46]"
-              >
-                Copy path
+              <button type="button" onClick={() => void copyPath(item)} className={`mt-3 mr-3 cursor-pointer rounded-lg border px-3 py-2 font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-ring ${copiedPath === item.path ? "border-emerald-600 bg-emerald-600 text-white" : "border-border bg-background text-foreground hover:bg-muted"}`}>
+                {copiedPath === item.path ? "✓ Copied" : "Copy path"}
               </button>
-              <button onClick={() => remove(item)} className="text-red-600">
+              <button type="button" onClick={() => void remove(item)} className="cursor-pointer rounded-lg px-3 py-2 text-destructive hover:bg-destructive/10 focus-visible:outline-2 focus-visible:outline-ring">
                 Delete
               </button>
             </div>

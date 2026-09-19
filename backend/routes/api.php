@@ -322,6 +322,8 @@ Route::prefix('v1')->group(function () {
                     'show',
                 ]);
 
+                Route::put('/settings/homepage', [SiteSettingController::class, 'updateHomepage']);
+
                 Route::put('/settings', [
                     SiteSettingController::class,
                     'update',

@@ -1,16 +1,13 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import Image from "next/image";
-import Script from "next/script";
 import { safePublicGet } from "@/lib/public-api";
 import type { ApiResponse } from "@/types/api";
 
 const links = [["Products", "/products"], ["Categories", "/categories"], ["Reviews & Guides", "/posts"], ["Brands", "/brands"], ["Search", "/search"]] as const;
 export async function SiteShell({ children }: { children: ReactNode }) {
-  const { data: settings } = await safePublicGet<ApiResponse<{ logo?: string | null; google_analytics_id?: string | null }>>("settings", { success: false, data: {} });
-  const gaId = /^G-[A-Z0-9]+$/.test(settings.google_analytics_id || "") ? settings.google_analytics_id : null;
+  const { data: settings } = await safePublicGet<ApiResponse<{ logo?: string | null }>>("settings", { success: false, data: {} });
   return <div className="min-h-screen bg-[#f8f8f2] text-[#18352d]">
-    {gaId && <><Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" /><Script id="dewdora-ga4" strategy="afterInteractive">{`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}window.gtag=gtag;gtag('js',new Date());gtag('config','${gaId}');`}</Script></>}
     <header className="sticky top-0 z-50 border-b border-[#dce6d9] bg-white/95 shadow-sm backdrop-blur"><div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-5 px-6 py-5">
       <Link href="/" aria-label="Dewdora homepage"><Image unoptimized src={settings.logo || "/dewdora-logo.svg"} alt="Dewdora" width={186} height={48} className="h-12 w-auto object-contain" /></Link>
       <nav aria-label="Main navigation" className="hidden flex-wrap gap-5 text-sm font-semibold md:flex">{links.map(([label, href]) => <Link key={href} href={href} className="hover:text-[#2c9873]">{label}</Link>)}<Link href="/contact" className="hover:text-[#2c9873]">Contact</Link></nav>

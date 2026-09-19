@@ -13,6 +13,7 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
    headless: true,
  });
  const page=await browser.newPage({viewport:{width:1440,height:1000}});
+ await page.context().grantPermissions(['clipboard-read','clipboard-write']);
  await page.route('https://www.googletagmanager.com/**', route => route.abort());
  await page.addInitScript(() => { window.__dewdoraEvents=[]; window.dataLayer=[]; const originalPush=window.dataLayer.push.bind(window.dataLayer);window.dataLayer.push=(...args)=>{for(const entry of args)window.__dewdoraEvents.push(Array.from(entry));return originalPush(...args);}; });
  const results=[],errors=[],requests=[];
@@ -59,8 +60,8 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
   await page.goto(base+'/admin/products/new');await page.locator('input[name=name]').fill('Browser Product '+stamp);await page.locator('input[name=slug]').fill('browser-product-'+stamp);await page.locator('input[name=affiliate_url]').fill('https://example.com/offer');await page.locator('input[name=featured]').check();await page.getByRole('button',{name:'Save product',exact:true}).click();await page.waitForURL('**/admin/products');
   let row=page.getByRole('row').filter({hasText:'Browser Product '+stamp});await row.getByRole('link',{name:'Edit',exact:true}).click();await page.locator('input[name=name]').fill('Browser Product Updated '+stamp);await page.getByRole('button',{name:'Save product',exact:true}).click();await page.waitForURL('**/admin/products');
   await page.goto(base+'/products/browser-product-'+stamp);await page.getByRole('heading',{name:'Browser Product Updated '+stamp,exact:true}).waitFor();const offer=page.getByRole('link',{name:'View offer ↗'}).first();if(await offer.getAttribute('href')!=='https://example.com/offer')throw Error('Wrong offer');
-  await page.goto(base+'/');await page.getByRole('heading',{name:'Explore products',exact:true}).waitFor();
-  const homepageProduct=page.getByRole('region',{name:'Affiliate products'}).getByRole('article').filter({hasText:'Browser Product Updated '+stamp});await homepageProduct.waitFor();
+  await page.goto(base+'/');await page.getByRole('heading',{name:'Latest Affiliate Products',exact:true}).waitFor();
+  const homepageProduct=page.getByRole('region',{name:'Latest Affiliate Products'}).getByRole('article').filter({hasText:'Browser Product Updated '+stamp});await homepageProduct.waitFor();
   const homeOffer=homepageProduct.getByRole('link',{name:'View offer ↗'});
   if(await homeOffer.getAttribute('href')!=='https://example.com/offer')throw Error('Homepage offer destination is wrong');
   await page.screenshot({path:path.join(output,'desktop-with-product.png'),fullPage:true});
@@ -76,7 +77,12 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
  await check('Carousel, SEO, GA events, hero and page sizes',async()=>{
   await page.setViewportSize({width:1440,height:1000});
   await page.goto(base+'/');
-  const carousel=page.getByRole('region',{name:'Affiliate products'});
+  const latest=page.getByRole('region',{name:'Latest Affiliate Products'});
+  const latestCards=latest.getByRole('article');
+  if(await latestCards.count()<8)throw Error('Latest rail has too few products');
+  const firstLatest=await latestCards.first().boundingBox(), fourthLatest=await latestCards.nth(3).boundingBox();
+  if(!firstLatest||!fourthLatest||fourthLatest.x<firstLatest.x+firstLatest.width*2.5)throw Error('Desktop latest rail must display three large cards');
+  const carousel=page.getByRole('region',{name:'Popular Affiliate Products'});
   const cards=carousel.getByRole('article');
   if(await cards.count()<8)throw Error('Expected eight real database products in carousel');
   const first=await cards.nth(0).boundingBox(), sixth=await cards.nth(5).boundingBox(), seventh=await cards.nth(6).boundingBox();
@@ -93,18 +99,20 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
   await page.waitForFunction(()=>window.__dewdoraEvents?.some(e=>e[0]==='event'&&e[1]==='affiliate_product_impression'));
   const events=await page.evaluate(()=>window.__dewdoraEvents);
   const impression=events.find(e=>e[1]==='affiliate_product_impression');
-  if(!impression[2].product_id||!impression[2].brand_id||impression[2].brand_name!=='Test Brand')throw Error('Brand impression parameters missing');
-  await page.evaluate(()=>document.addEventListener('click',e=>{if(e.target.closest('a[href^="https://example.com/offer/"]'))e.preventDefault()},true));
+  if(!impression[2].product_id||!impression[2].brand_id||impression[2].placement!=='homepage_popular')throw Error('Popular impression parameters missing');
+  if(!events.some(e=>e[1]==='view_item_list'&&e[2].placement==='homepage_latest'))throw Error('Latest GA4 impression missing');
+  if(!events.some(e=>e[1]==='view_item_list'&&e[2].placement==='homepage_popular'))throw Error('Popular GA4 impression missing');
+  await page.evaluate(()=>document.addEventListener('click',e=>{if(e.target.closest('a[href^="https://example.com/"]'))e.preventDefault()},true));
   await cards.first().getByRole('link',{name:'View offer ↗'}).click();
   const clicks=await page.evaluate(()=>window.__dewdoraEvents.filter(e=>e[1]==='affiliate_click'));
-  if(!clicks.length||!clicks.at(-1)[2].brand_id||clicks.at(-1)[2].product_name!=='Test Product 8')throw Error('Click analytics parameters missing');
+  if(!clicks.length||!clicks.at(-1)[2].brand_id||clicks.at(-1)[2].placement!=='homepage_popular')throw Error('Click analytics parameters missing');
   if(!await page.getByRole('heading',{name:'Test hero banner'}).isVisible())throw Error('Hero banner absent');
-  const markup=await page.content();if(markup.indexOf('Affiliate products')>markup.indexOf('Test hero banner'))throw Error('Homepage sections out of order');
+  const markup=await page.content();if(!(markup.indexOf('Latest Affiliate Products')<markup.indexOf('Popular Affiliate Products')&&markup.indexOf('Popular Affiliate Products')<markup.indexOf('Test hero banner')))throw Error('Homepage sections out of order');
   for(const route of ['/products','/products/test-product-8','/posts/test-review']){
     const response=await page.goto(base+route);if(response.status()!==200)throw Error(route+' returned '+response.status());
     for(const selector of ['meta[property="og:title"]','meta[property="og:description"]','meta[property="og:image"]','meta[property="og:url"]','meta[property="og:type"]','meta[name="twitter:card"]','meta[name="twitter:title"]','meta[name="twitter:description"]','meta[name="twitter:image"]','link[rel="canonical"]'])if(!await page.locator(selector).count())throw Error(route+' missing '+selector);
   }
-  await page.goto(base+'/admin/analytics');await page.getByRole('heading',{name:'Affiliate analytics'}).waitFor();await page.getByText('Test Brand',{exact:true}).first().waitFor();
+  await page.goto(base+'/admin/analytics');await page.getByRole('heading',{name:'Affiliate analytics'}).waitFor();await page.getByText('Test Brand',{exact:true}).first().waitFor();await page.getByRole('heading',{name:'Placements'}).waitFor();
   await page.goto(base+'/admin/hero-banners');await page.getByRole('heading',{name:'Hero banners'}).waitFor();
   await page.getByRole('button',{name:'Add banner'}).click();await page.locator('input[name=heading]').fill('Browser banner '+stamp);await page.locator('input[name=sort_order]').fill('1');await page.getByRole('button',{name:'Save',exact:true}).click();await page.getByRole('heading',{name:'Browser banner '+stamp}).waitFor();await page.getByRole('button',{name:'Delete',exact:true}).last().click();
   await page.goto(base+'/admin/categories');const sizePending=page.waitForResponse(r=>r.url().includes('per_page=all'));await page.getByRole('combobox',{name:'Items per page'}).selectOption('all');const sizeResponse=await sizePending;if(sizeResponse.status()!==200)throw Error('All page-size request failed');
@@ -134,7 +142,7 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
    await page.locator('input[type=file]').setInputFiles({name:'test.png',mimeType:'image/png',buffer:png});
    const uploadResponse=page.waitForResponse(r=>r.url().endsWith('/admin/media/upload') && r.request().method()==='POST');await page.getByRole('button',{name:'Upload image'}).click();
    const uploaded=await uploadResponse;if(uploaded.status()!==201)throw Error('Media upload returned '+uploaded.status());const uploadedName=(await uploaded.json()).data.name;
-   const card=page.locator('div.overflow-hidden').filter({hasText:uploadedName});await card.waitFor();await card.getByRole('button',{name:'Delete'}).click();await card.waitFor({state:'detached'});
+   const card=page.locator('div.overflow-hidden').filter({hasText:uploadedName});await card.waitFor();await card.getByRole('button',{name:'Copy path'}).click();await card.getByRole('button',{name:'✓ Copied'}).waitFor();if(!String(await page.evaluate(()=>navigator.clipboard.readText())).includes(uploadedName))throw Error('Media path was not copied');await card.getByRole('button',{name:'Delete'}).click();await card.waitFor({state:'detached'});
  });
  await check('Settings and profile API screens',async()=>{
    await page.goto(base+'/admin/settings');await page.getByRole('heading',{name:'Site settings'}).waitFor();const field=page.locator('input[name=site_name]');await field.waitFor();const previous=await field.inputValue();await field.fill('Dewdora Browser Test');const saveResult=page.waitForResponse(r=>r.url().endsWith('/admin/settings') && r.request().method()==='PUT');await page.getByRole('button',{name:'Save settings'}).click();if((await saveResult).status()!==200)throw Error('Settings update failed');await field.fill(previous || 'Dewdora');const restoreResult=page.waitForResponse(r=>r.url().endsWith('/admin/settings') && r.request().method()==='PUT');await page.getByRole('button',{name:'Save settings'}).click();if((await restoreResult).status()!==200)throw Error('Settings restore failed');await page.goto(base+'/admin/profile');await page.getByRole('heading',{name:'Profile',exact:true}).waitFor();await page.getByText(email).waitFor();
@@ -142,6 +150,24 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
  await page.goto(base+'/');await page.screenshot({path:path.join(output, 'desktop.png'),fullPage:true});
  await check('Mobile admin navigation and no horizontal overflow',async()=>{await page.setViewportSize({width:390,height:844});await page.goto(base+'/admin/users');await page.getByRole('heading',{name:'Users',exact:true}).waitFor();await page.getByRole('row').filter({hasText:email}).waitFor();if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Horizontal overflow');await page.getByRole('button',{name:'Open admin navigation'}).click();await page.getByRole('dialog').getByRole('link',{name:'Categories',exact:true}).waitFor();await page.screenshot({path:path.join(output, 'mobile-admin.png'),fullPage:true});});
  await check('Mobile public homepage',async()=>{await page.goto(base+'/');await page.locator('h1').waitFor();if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Horizontal overflow');await page.screenshot({path:path.join(output,'mobile-home.png'),fullPage:true});});
+ await check('Homepage sections visibility persists through the API',async()=>{
+   await page.goto(base+'/admin/homepage-settings');await page.getByRole('heading',{name:'Homepage sections'}).waitFor();
+   const toggle=page.getByRole('checkbox',{name:'Show Buying Guides / How-tos'});await toggle.uncheck();
+   let pending=page.waitForResponse(r=>r.url().endsWith('/admin/settings/homepage')&&r.request().method()==='PUT');
+   await page.getByRole('button',{name:'Save homepage settings'}).click();if((await pending).status()!==200)throw Error('Could not disable buying guides');
+   await page.goto(base+'/');if(await page.getByRole('heading',{name:'Buying guides & how-tos'}).count())throw Error('Hidden buying guides remained visible');
+   await page.goto(base+'/admin/homepage-settings');await page.getByRole('checkbox',{name:'Show Buying Guides / How-tos'}).check();
+   pending=page.waitForResponse(r=>r.url().endsWith('/admin/settings/homepage')&&r.request().method()==='PUT');
+   await page.getByRole('button',{name:'Save homepage settings'}).click();if((await pending).status()!==200)throw Error('Could not re-enable buying guides');
+   await page.goto(base+'/');await page.getByRole('heading',{name:'Buying guides & how-tos'}).waitFor();
+ });
+ await check('Logout revokes the session and protects admin routes',async()=>{
+   await page.goto(base+'/admin');await page.getByText('Dashboard',{exact:true}).first().waitFor();
+   await page.getByLabel('Account menu').click();
+   const pending=page.waitForResponse(r=>r.url().endsWith('/auth/logout')&&r.request().method()==='POST');
+   await page.getByRole('button',{name:'Logout'}).click();if((await pending).status()!==200)throw Error('Backend logout failed');
+   await page.waitForURL('**/auth/login');await page.goto(base+'/admin');await page.waitForURL('**/auth/login');
+ });
  if(errors.length)throw Error('Browser errors: '+errors.join('; '));
  if(requests.some(r=>r.status>=400))throw Error('Failed API requests: '+JSON.stringify(requests.filter(r=>r.status>=400)));
  }catch(e){results.push({name:'FAILURE',error:e.stack});console.error(e);await page.screenshot({path:path.join(output, 'failure.png'),fullPage:true});process.exitCode=1;}

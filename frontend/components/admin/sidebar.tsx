@@ -30,6 +30,7 @@ const items = [
   { label: "Affiliate analytics", href: "/admin/analytics", icon: ChartNoAxesCombined },
   { label: "Posts", href: "/admin/posts", icon: FileText },
   { label: "Hero banners", href: "/admin/hero-banners", icon: PanelTop },
+  { label: "Homepage sections", href: "/admin/homepage-settings", icon: PanelTop },
   { label: "Categories", href: "/admin/categories", icon: FolderTree },
   { label: "Tags", href: "/admin/tags", icon: Tags },
   { label: "Products", href: "/admin/products", icon: ShoppingBag },

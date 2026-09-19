@@ -30,4 +30,9 @@ class AffiliateNetwork extends Model
     {
         return $this->hasMany(AffiliateProduct::class);
     }
+
+    public function affiliateEvents(): HasMany
+    {
+        return $this->hasMany(AffiliateEvent::class);
+    }
 }

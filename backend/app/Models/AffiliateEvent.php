@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AffiliateEvent extends Model
 {
-    protected $fillable = ['affiliate_product_id', 'brand_id', 'kind', 'session_id'];
+    protected $fillable = ['affiliate_product_id', 'brand_id', 'affiliate_network_id', 'kind', 'session_id', 'placement'];
 
     public function product(): BelongsTo { return $this->belongsTo(AffiliateProduct::class, 'affiliate_product_id'); }
     public function brand(): BelongsTo { return $this->belongsTo(Brand::class); }
