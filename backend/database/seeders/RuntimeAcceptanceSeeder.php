@@ -46,6 +46,6 @@ class RuntimeAcceptanceSeeder extends Seeder
             'cta_text' => 'Explore products', 'cta_url' => '/products', 'enabled' => true,
             'sort_order' => 0,
         ]);
-        SiteSetting::firstOrCreate(['id' => 1], ['site_name' => 'Dewdora', 'google_analytics_id' => 'G-TEST12345']);
+        SiteSetting::updateOrCreate(['id' => 1], ['site_name' => 'Dewdora', 'google_analytics_id' => 'G-TEST12345']);
     }
 }

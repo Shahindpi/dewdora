@@ -12,7 +12,18 @@ import type { ApiResponse } from "@/types/api";
 type Home = { carousel_products: PublicProduct[]; hero_banners: HeroBanner[]; hero_products: PublicProduct[]; popular_posts: PublicPost[]; latest_posts: PublicPost[]; featured_categories: PublicCategory[]; featured_brands: { id: number; name: string; slug: string; logo?: string | null }[]; statistics: { posts: number; products: number; categories: number; brands: number } };
 const empty: Home = { carousel_products: [], hero_banners: [], hero_products: [], popular_posts: [], latest_posts: [], featured_categories: [], featured_brands: [], statistics: { posts: 0, products: 0, categories: 0, brands: 0 } };
 export default async function HomePage() {
-  const { data } = await safePublicGet<ApiResponse<Home>>("homepage", { data: empty, success: false });
+  const response = await safePublicGet<ApiResponse<Partial<Home>>>("homepage", { data: empty, success: false });
+  const source = response.data || {};
+  const data: Home = {
+    carousel_products: Array.isArray(source.carousel_products) ? source.carousel_products : [],
+    hero_banners: Array.isArray(source.hero_banners) ? source.hero_banners : [],
+    hero_products: Array.isArray(source.hero_products) ? source.hero_products : [],
+    popular_posts: Array.isArray(source.popular_posts) ? source.popular_posts : [],
+    latest_posts: Array.isArray(source.latest_posts) ? source.latest_posts : [],
+    featured_categories: Array.isArray(source.featured_categories) ? source.featured_categories : [],
+    featured_brands: Array.isArray(source.featured_brands) ? source.featured_brands : [],
+    statistics: source.statistics || empty.statistics,
+  };
   const reviews = data.latest_posts.filter(post => post.post_type === "review");
   const guides = data.latest_posts.filter(post => post.post_type === "tutorial" || post.post_type === "article");
   return <SiteShell><JsonLd data={{ "@context": "https://schema.org", "@type": "WebSite", name: "Dewdora", url: siteOrigin }} /><JsonLd data={{ "@context": "https://schema.org", "@type": "Organization", name: "Dewdora", url: siteOrigin, logo: `${siteOrigin}/dewdora-logo.svg` }} /><AffiliateCarousel products={data.carousel_products} /><HeroBannerSection banner={data.hero_banners?.[0]} />

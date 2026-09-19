@@ -9,38 +9,13 @@ class RoleSeeder extends Seeder
 {
     public function run(): void
     {
-        Role::insert([
-
-            [
-
-                'name'=>'Administrator',
-
-                'slug'=>'admin',
-
-                'description'=>'System Administrator'
-
-            ],
-
-            [
-
-                'name'=>'Editor',
-
-                'slug'=>'editor',
-
-                'description'=>'Content Editor'
-
-            ],
-
-            [
-
-                'name'=>'Author',
-
-                'slug'=>'author',
-
-                'description'=>'Content Author'
-
-            ]
-
-        ]);
+        foreach ([
+            ['Administrator', 'admin', 'Full CMS access'],
+            ['Editor', 'editor', 'Editorial account'],
+            ['Author', 'author', 'Contributor account'],
+            ['Viewer', 'viewer', 'Read-only account'],
+        ] as [$name, $slug, $description]) {
+            Role::updateOrCreate(['slug' => $slug], compact('name', 'slug', 'description') + ['status' => true]);
+        }
     }
 }

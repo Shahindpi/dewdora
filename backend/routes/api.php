@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Admin\AffiliateNetworkController;
 use App\Http\Controllers\Api\Admin\AffiliateProductController;
+use App\Http\Controllers\Api\Admin\AffiliateAnalyticsController;
 use App\Http\Controllers\Api\Admin\BrandController;
 use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\CommentController as AdminCommentController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Public\AffiliateNetworkController as PublicAffiliateNetworkController;
 use App\Http\Controllers\Api\Public\AffiliateProductController as PublicAffiliateProductController;
+use App\Http\Controllers\Api\Public\AffiliateEventController;
 use App\Http\Controllers\Api\Public\BrandController as PublicBrandController;
 use App\Http\Controllers\Api\Public\CategoryController as PublicCategoryController;
 use App\Http\Controllers\Api\Public\CommentController;
@@ -208,6 +210,8 @@ Route::prefix('v1')->group(function () {
             | Featured Products
             |--------------------------------------------------------------------------
             */
+
+            Route::post('/affiliate-events', [AffiliateEventController::class, 'store']);
 
             Route::get('/products/featured', [
                 PublicAffiliateProductController::class,
@@ -546,6 +550,8 @@ Route::prefix('v1')->group(function () {
                     MediaController::class,
                     'destroy',
                 ]);
+
+                Route::get('/affiliate-analytics', [AffiliateAnalyticsController::class, 'index']);
 
                 Route::get('/dashboard/overview', [
                     DashboardController::class,

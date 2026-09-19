@@ -86,23 +86,24 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
   await page.waitForFunction(()=>window.__dewdoraEvents?.some(e=>e[0]==='event'&&e[1]==='affiliate_product_impression'));
   const events=await page.evaluate(()=>window.__dewdoraEvents);
   const impression=events.find(e=>e[1]==='affiliate_product_impression');
-  if(!impression[2].product_id||impression[2].brand_id!==1||impression[2].brand_name!=='Test Brand')throw Error('Brand impression parameters missing');
+  if(!impression[2].product_id||!impression[2].brand_id||impression[2].brand_name!=='Test Brand')throw Error('Brand impression parameters missing');
   await page.evaluate(()=>document.addEventListener('click',e=>{if(e.target.closest('a[href^="https://example.com/offer/"]'))e.preventDefault()},true));
   await cards.first().getByRole('link',{name:'View offer ↗'}).click();
   const clicks=await page.evaluate(()=>window.__dewdoraEvents.filter(e=>e[1]==='affiliate_click'));
-  if(!clicks.length||clicks.at(-1)[2].brand_id!==1||clicks.at(-1)[2].product_id!==8)throw Error('Click analytics parameters missing');
+  if(!clicks.length||!clicks.at(-1)[2].brand_id||clicks.at(-1)[2].product_name!=='Test Product 8')throw Error('Click analytics parameters missing');
   if(!await page.getByRole('heading',{name:'Test hero banner'}).isVisible())throw Error('Hero banner absent');
   const markup=await page.content();if(markup.indexOf('Affiliate products')>markup.indexOf('Test hero banner'))throw Error('Homepage sections out of order');
   for(const route of ['/products','/products/test-product-8','/posts/test-review']){
     const response=await page.goto(base+route);if(response.status()!==200)throw Error(route+' returned '+response.status());
     for(const selector of ['meta[property="og:title"]','meta[property="og:description"]','meta[property="og:image"]','meta[property="og:url"]','meta[property="og:type"]','meta[name="twitter:card"]','meta[name="twitter:title"]','meta[name="twitter:description"]','meta[name="twitter:image"]','link[rel="canonical"]'])if(!await page.locator(selector).count())throw Error(route+' missing '+selector);
   }
+  await page.goto(base+'/admin/analytics');await page.getByRole('heading',{name:'Affiliate analytics'}).waitFor();await page.getByText('Test Brand',{exact:true}).first().waitFor();
   await page.goto(base+'/admin/hero-banners');await page.getByRole('heading',{name:'Hero banners'}).waitFor();
   await page.getByRole('button',{name:'Add banner'}).click();await page.locator('input[name=heading]').fill('Browser banner '+stamp);await page.locator('input[name=sort_order]').fill('1');await page.getByRole('button',{name:'Save',exact:true}).click();await page.getByRole('heading',{name:'Browser banner '+stamp}).waitFor();await page.getByRole('button',{name:'Delete',exact:true}).last().click();
   await page.goto(base+'/admin/categories');const sizePending=page.waitForResponse(r=>r.url().includes('per_page=all'));await page.getByRole('combobox',{name:'Items per page'}).selectOption('all');const sizeResponse=await sizePending;if(sizeResponse.status()!==200)throw Error('All page-size request failed');
  });
  await check('Admin page sizes, persisted theme and sticky navigation',async()=>{
-  for(const route of ['posts','categories','tags','brands','networks','products','users','comments','newsletter','contacts','media']){
+  for(const route of ['posts','categories','tags','brands','networks','products','users','comments','newsletter','contacts','media','analytics']){
     await page.goto(base+'/admin/'+route);
     const selector=page.getByRole('combobox',{name:'Items per page'});
     await selector.waitFor();

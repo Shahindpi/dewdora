@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 
 import {
   LayoutDashboard,
+  ChartNoAxesCombined,
   PanelTop,
   FileText,
   FolderTree,
@@ -26,6 +27,7 @@ import {
 
 const items = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { label: "Affiliate analytics", href: "/admin/analytics", icon: ChartNoAxesCombined },
   { label: "Posts", href: "/admin/posts", icon: FileText },
   { label: "Hero banners", href: "/admin/hero-banners", icon: PanelTop },
   { label: "Categories", href: "/admin/categories", icon: FolderTree },
