@@ -1,28 +1,10 @@
 "use client";
-
 import Image from "next/image";
-import { imageUrl } from "@/lib/image";
-
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getSettings } from "@/services/settings";
 export default function Logo() {
-  return (
-    <div className="flex items-center gap-3">
-      <Image
-        src={imageUrl("uploads/settings/81d90c73-57f4-44f1-97b5-0950c07e45c1.png")}
-        alt="Dewdora"
-        width={36}
-        height={36}
-        unoptimized
-      />
-
-      <div>
-        <h1 className="text-lg font-bold leading-none">
-          Dewdora
-        </h1>
-
-        <p className="text-xs text-muted-foreground">
-          AI Affiliate CMS
-        </p>
-      </div>
-    </div>
-  );
+  const [imageFailed, setImageFailed] = useState(false);
+  const { data: settings } = useQuery({ queryKey: ["public-settings"], queryFn: getSettings, staleTime: 30 * 60 * 1000 });
+  return <Image src={settings?.logo && !imageFailed ? settings.logo : "/dewdora-logo.svg"} alt="Dewdora" width={186} height={48} className="h-12 w-auto object-contain" unoptimized onError={() => setImageFailed(true)} />;
 }

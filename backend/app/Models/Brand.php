@@ -27,6 +27,11 @@ class Brand extends Model
         ];
     }
 
+    public function affiliateEvents(): HasMany
+    {
+        return $this->hasMany(AffiliateEvent::class);
+    }
+
     public function affiliateProducts(): HasMany
     {
         return $this->hasMany(AffiliateProduct::class);

@@ -2,26 +2,21 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Cache;
-
-use App\Models\Post;
-use App\Models\Category;
-use App\Models\Tag;
+use App\Http\Resources\Api\AffiliateProductResource;
+use App\Http\Resources\Api\PostResource;
+use App\Models\AffiliateNetwork;
 use App\Models\AffiliateProduct;
 use App\Models\Brand;
-use App\Models\AffiliateNetwork;
+use App\Models\Category;
+use App\Models\Post;
+use App\Models\Tag;
 use App\Models\User;
-
-
-use App\Http\Resources\Api\PostResource;
-use App\Http\Resources\Api\AffiliateProductResource;
-
 use App\Services\CacheService;
 use App\Support\ApiResponse;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -113,6 +108,7 @@ class DashboardController extends Controller
             'data' => $data,
         ]);
     }
+
     /**
      * Dashboard analytics.
      */
@@ -124,13 +120,15 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
+        $monthExpression = match (DB::connection()->getDriverName()) {
+            'sqlite' => "strftime('%Y-%m', published_at)",
+            'pgsql' => "to_char(published_at, 'YYYY-MM')",
+            default => "DATE_FORMAT(published_at, '%Y-%m')",
+        };
+
         $monthlyPosts = Post::query()
-            ->selectRaw("
-                DATE_FORMAT(published_at, '%Y-%m') as month,
-                COUNT(*) as total
-            ")
-            ->where('status', 'published')
-            ->whereNotNull('published_at')
+            ->selectRaw("{$monthExpression} as month, COUNT(*) as total")
+            ->published()
             ->where('published_at', '>=', now()->subMonths(11)->startOfMonth())
             ->groupBy('month')
             ->orderBy('month')
@@ -328,9 +326,9 @@ class DashboardController extends Controller
 
                     'recent_products' => AffiliateProductResource::collection(
                         AffiliateProduct::with([
-                                'brand',
-                                'category',
-                            ])
+                            'brand',
+                            'category',
+                        ])
                             ->latest()
                             ->limit(5)
                             ->get()
@@ -370,5 +368,4 @@ class DashboardController extends Controller
             'Popular posts analytics retrieved successfully.'
         );
     }
-
 }

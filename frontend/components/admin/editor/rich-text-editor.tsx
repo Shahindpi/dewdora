@@ -21,18 +21,20 @@ import "./editor-styles.css";
 interface Props {
   value: string;
   onChange: (value: string) => void;
+  imageAltFallback?: string;
 }
 
 export default function RichTextEditor({
   value,
   onChange,
+  imageAltFallback = "Editorial image",
 }: Props) {
     const [mediaOpen, setMediaOpen] = useState(false);
   const editor = useEditor({
     immediatelyRender: false,
 
     extensions: [
-        StarterKit,
+        StarterKit.configure({ link: false, underline: false }),
         Underline,
         Image,
         Link.configure({
@@ -75,6 +77,11 @@ export default function RichTextEditor({
       <EditorToolbar
         editor={editor}
         onInsertImage={() => setMediaOpen(true)}
+        onEditImageAlt={() => {
+          const current = editor.getAttributes("image").alt as string | undefined;
+          const alt = window.prompt("Describe this image for readers using assistive technology", current || imageAltFallback);
+          if (alt !== null) editor.chain().focus().updateAttributes("image", { alt }).run();
+        }}
        />
 
       <EditorContent
@@ -90,7 +97,7 @@ export default function RichTextEditor({
             .focus()
             .setImage({
                 src: image.url,
-                alt: image.name,
+                alt: image.name || imageAltFallback,
             })
             .run();
 

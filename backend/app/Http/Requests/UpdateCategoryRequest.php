@@ -25,6 +25,7 @@ class UpdateCategoryRequest extends FormRequest
         $category = $this->route('category');
 
         return [
+            'parent_id' => ['nullable', 'integer', Rule::exists('categories', 'id')->whereNull('deleted_at'), Rule::notIn([$category?->id])],
             'name' => [
                 'sometimes',
                 'required',
@@ -45,6 +46,9 @@ class UpdateCategoryRequest extends FormRequest
                 'nullable',
                 'string',
             ],
+            'image' => ['nullable', 'string', 'max:255'],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
+            'status' => ['nullable', 'boolean'],
         ];
     }
 }

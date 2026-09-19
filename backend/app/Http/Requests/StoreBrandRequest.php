@@ -3,9 +3,17 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 
 class StoreBrandRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if (! $this->filled('slug') && $this->filled('name')) {
+            $this->merge(['slug' => Str::slug($this->string('name')->value())]);
+        }
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -44,6 +52,7 @@ class StoreBrandRequest extends FormRequest
                 'nullable',
                 'string',
             ],
+            'status' => ['nullable', 'boolean'],
         ];
     }
 }

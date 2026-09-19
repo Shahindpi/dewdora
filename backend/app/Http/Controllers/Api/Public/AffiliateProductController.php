@@ -53,6 +53,7 @@ class AffiliateProductController extends Controller
                     ->when($request->filled('category'), fn ($query) => $query->whereHas('category', fn ($category) => $category->where('slug', $request->input('category'))))
                     ->with([
                         'brand:id,name,slug,logo',
+                        'affiliateNetwork:id,name,slug,website',
                         'category:id,name,slug',
                         'seoMeta:id,seoable_id,seoable_type,meta_title,meta_description,canonical_url',
                     ])
@@ -82,6 +83,7 @@ class AffiliateProductController extends Controller
                     ->where('featured', true)
                     ->with([
                         'brand',
+                        'affiliateNetwork',
                         'category',
 
                         'seoMeta' => function ($query) {
@@ -127,9 +129,28 @@ class AffiliateProductController extends Controller
             }
         );
 
+        $relatedProducts = AffiliateProduct::query()
+            ->where('status', true)
+            ->whereKeyNot($product->id)
+            ->when($product->category_id, fn ($query) => $query->where('category_id', $product->category_id))
+            ->with(['brand', 'affiliateNetwork', 'category', 'seoMeta'])
+            ->orderByDesc('featured')
+            ->latest()
+            ->limit(4)
+            ->get();
+
+        $relatedPosts = $product->posts()
+            ->published()
+            ->with(['category', 'tags', 'seoMeta'])
+            ->latest('published_at')
+            ->limit(4)
+            ->get();
+
         return ApiResponse::success(
             [
                 'product' => new AffiliateProductResource($product),
+                'related_products' => AffiliateProductResource::collection($relatedProducts),
+                'related_posts' => PostResource::collection($relatedPosts),
             ],
             'Affiliate product retrieved successfully.'
         );

@@ -1,11 +1,3 @@
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-6">
-      {children}
-    </main>
-  );
-}
+import type { Metadata } from "next";
+export const metadata: Metadata = { robots: { index: false, follow: false } };
+export default function AuthLayout({ children }: { children: React.ReactNode }) { return children; }

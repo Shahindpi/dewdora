@@ -7,8 +7,10 @@ use App\Models\Brand;
 use Illuminate\Http\Request;
 
 use App\Http\Resources\Api\BrandResource;
+use App\Http\Resources\Api\AffiliateProductResource;
 use App\Support\ApiResponse;
 use App\Services\CacheService;
+use Illuminate\Support\Facades\Cache;
 
 class BrandController extends Controller
 {
@@ -22,17 +24,13 @@ class BrandController extends Controller
             50
         );
 
-        $cacheKey = CacheService::publicBrandsKey(
-            $request->query(),
-            $perPage
-        );
+        $cacheKey = CacheService::publicBrandsKey() . '_' . Cache::get('public_cache_version', 0) . '_' . md5(json_encode($request->query()));
 
-        return CacheService::remember(
-            $cacheKey,
-            function () use ($request, $perPage) {
+        $brands = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($request, $perPage) {
 
                 $brands = Brand::query()
-                    ->withCount('affiliateProducts')
+                    ->where('status', true)
+                    ->withCount(['affiliateProducts' => fn ($query) => $query->where('status', true)])
 
                     ->when(
                         $request->filled('search'),
@@ -54,12 +52,10 @@ class BrandController extends Controller
                     ->orderBy('name')
                     ->paginate($perPage);
 
-                return ApiResponse::paginated(
-                    BrandResource::collection($brands),
-                    'Brands retrieved successfully.'
-                );
-            }
-        );
+                return $brands;
+            });
+
+        return ApiResponse::paginated(BrandResource::collection($brands), 'Brands retrieved successfully.');
     }
 
     /**
@@ -67,22 +63,29 @@ class BrandController extends Controller
      */
     public function show(string $slug)
     {
-        $cacheKey = CacheService::publicBrandKey($slug);
+        $cacheKey = CacheService::publicBrandKey($slug) . '_' . Cache::get('public_cache_version', 0);
 
-        return CacheService::remember(
-            $cacheKey,
-            function () use ($slug) {
+        $brand = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($slug) {
 
                 $brand = Brand::query()
-                    ->withCount('affiliateProducts')
+                    ->where('status', true)
+                    ->withCount(['affiliateProducts' => fn ($query) => $query->where('status', true)])
                     ->where('slug', $slug)
                     ->firstOrFail();
 
-                return ApiResponse::success(
-                    new BrandResource($brand),
-                    'Brand retrieved successfully.'
-                );
-            }
-        );
+                return $brand;
+            });
+
+        $products = $brand->affiliateProducts()
+            ->where('status', true)
+            ->with(['brand', 'affiliateNetwork', 'category', 'seoMeta'])
+            ->orderByDesc('featured')
+            ->latest()
+            ->paginate(12);
+
+        return ApiResponse::success([
+            'brand' => new BrandResource($brand),
+            'products' => ApiResponse::nestedPage(AffiliateProductResource::collection($products->getCollection()), $products),
+        ], 'Brand retrieved successfully.');
     }
 }

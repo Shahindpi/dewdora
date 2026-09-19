@@ -3,9 +3,17 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 
 class StorePostRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if (! $this->filled('slug') && $this->filled('title')) {
+            $this->merge(['slug' => Str::slug($this->string('title')->value())]);
+        }
+    }
+
     /**
      * Determine if the user is authorized to make this request.
      */

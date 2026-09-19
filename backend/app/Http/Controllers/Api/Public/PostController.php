@@ -68,6 +68,7 @@ class PostController extends Controller
 
                     ->with([
                         'category:id,name,slug',
+                        'user:id,name',
 
                         'tags:id,name,slug',
 
@@ -239,6 +240,7 @@ class PostController extends Controller
                     ->with([
 
                         'category:id,name,slug',
+                        'user:id,name',
 
                         'tags:id,name,slug',
 
@@ -247,19 +249,6 @@ class PostController extends Controller
                         'affiliateProducts' => function ($query) {
 
                             $query
-                                ->select([
-                                    'affiliate_products.id',
-                                    'affiliate_products.brand_id',
-                                    'affiliate_products.category_id',
-                                    'affiliate_products.name',
-                                    'affiliate_products.slug',
-                                    'affiliate_products.short_description',
-                                    'affiliate_products.price',
-                                    'affiliate_products.currency',
-                                    'affiliate_products.rating',
-                                    'affiliate_products.featured_image',
-                                ])
-
                                 ->where('status', true)
 
                                 ->with([

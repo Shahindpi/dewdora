@@ -100,7 +100,7 @@ class CacheService
 
     public static function searchSuggestionsKey(string $query): string
     {
-        return 'search_suggestions_' . md5(strtolower(trim($query)));
+        return 'search_suggestions_' . Cache::get('public_cache_version', 0) . '_' . md5(strtolower(trim($query)));
     }
 
     /*
@@ -169,6 +169,7 @@ class CacheService
 
     public static function clearPublicCaches(): void
     {
+        Cache::add('public_cache_version', 0);
         Cache::increment('public_cache_version');
         Cache::forget(self::homepageKey());
         

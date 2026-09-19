@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\AdminPageSize;
 use App\Models\AffiliateNetwork;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -50,10 +51,7 @@ class AffiliateNetworkController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $perPage = min(
-            max($request->integer('per_page', 15), 1),
-            100
-        );
+        $perPage = AdminPageSize::resolve($request, $query, 15);
 
         $networks = $query->paginate($perPage);
 

@@ -3,18 +3,17 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\AdminPageSize;
+use App\Http\Requests\StorePostRequest;
+use App\Http\Requests\UpdatePostRequest;
+use App\Http\Resources\Api\PostResource;
 use App\Models\Post;
+use App\Services\CacheService;
+use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-
-use App\Http\Requests\StorePostRequest;
-use App\Http\Requests\UpdatePostRequest;
-use App\Services\CacheService;
-use App\Support\ApiResponse;
-use App\Http\Resources\Api\PostResource;
-
 
 class PostController extends Controller
 {
@@ -75,16 +74,17 @@ class PostController extends Controller
             );
         }
 
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->integer('category_id'));
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Pagination
         |--------------------------------------------------------------------------
         */
 
-        $perPage = min(
-            max((int) $request->input('per_page', 15), 1),
-            100
-        );
+        $perPage = AdminPageSize::resolve($request, $query, 15);
 
         $posts = $query->paginate($perPage);
 
@@ -93,7 +93,6 @@ class PostController extends Controller
             'Posts retrieved successfully.'
         );
     }
-
 
     /**
      * Store a newly created post.
@@ -148,6 +147,8 @@ class PostController extends Controller
         */
 
         $post = Post::create($validated);
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         /*
         |--------------------------------------------------------------------------
@@ -160,14 +161,12 @@ class PostController extends Controller
             'user',
         ]);
 
-
         return ApiResponse::success(
             new PostResource($post),
             'Post created successfully.',
             201
         );
     }
-
 
     /**
      * Synchronize tags for a post.
@@ -179,7 +178,7 @@ class PostController extends Controller
 
         $validated = $request->validate([
             'tag_ids' => [
-                'required',
+                'present',
                 'array',
             ],
 
@@ -192,6 +191,7 @@ class PostController extends Controller
         $post->tags()->sync(
             $validated['tag_ids']
         );
+        CacheService::clearPostCaches($post->slug);
 
         $post->load('tags');
 
@@ -215,9 +215,8 @@ class PostController extends Controller
 
         $validated = $request->validate([
             'products' => [
-                'required',
+                'present',
                 'array',
-                'min:1',
             ],
 
             'products.*.affiliate_product_id' => [
@@ -245,17 +244,16 @@ class PostController extends Controller
             $syncData[
                 $product['affiliate_product_id']
             ] = [
-                'sort_order' =>
-                    $product['sort_order'] ?? 0,
+                'sort_order' => $product['sort_order'] ?? 0,
 
-                'is_primary' =>
-                    $product['is_primary'] ?? false,
+                'is_primary' => $product['is_primary'] ?? false,
             ];
         }
 
         $post->affiliateProducts()->sync(
             $syncData
         );
+        CacheService::clearPostCaches($post->slug);
 
         $post->load([
             'affiliateProducts',
@@ -263,18 +261,15 @@ class PostController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' =>
-                'Affiliate products updated successfully.',
+            'message' => 'Affiliate products updated successfully.',
 
             'data' => [
                 'post_id' => $post->id,
 
-                'products' =>
-                    $post->affiliateProducts,
+                'products' => $post->affiliateProducts,
             ],
         ]);
     }
-
 
     /**
      * Display the specified post.
@@ -295,7 +290,6 @@ class PostController extends Controller
         );
     }
 
-
     /**
      * Update the specified post.
      */
@@ -305,6 +299,7 @@ class PostController extends Controller
     ) {
 
         $validated = $request->validated();
+        $oldSlug = $post->slug;
 
         /*
         |--------------------------------------------------------------------------
@@ -314,7 +309,7 @@ class PostController extends Controller
 
         if (
             isset($validated['title']) &&
-            !isset($validated['slug'])
+            ! isset($validated['slug'])
         ) {
             $validated['slug'] =
                 Str::slug($validated['title']);
@@ -331,6 +326,8 @@ class PostController extends Controller
         }
 
         $post->update($validated);
+        CacheService::clearPostCaches($oldSlug);
+        CacheService::clearPost($post->slug);
 
         /*
         |--------------------------------------------------------------------------
@@ -345,13 +342,11 @@ class PostController extends Controller
             'user',
         ]);
 
-
         return ApiResponse::success(
             new PostResource($post),
             'Post updated successfully.'
         );
     }
-
 
     public function destroy(Post $post): JsonResponse
     {
@@ -364,6 +359,8 @@ class PostController extends Controller
         CacheService::clearPost($post->slug);
 
         $post->delete();
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         return response()->json([
             'success' => true,

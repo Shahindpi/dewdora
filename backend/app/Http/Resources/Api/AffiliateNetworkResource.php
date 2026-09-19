@@ -20,6 +20,7 @@ class AffiliateNetworkResource extends JsonResource
 
             'website' => $this->website,
             'description' => $this->description,
+            'status' => (bool) $this->status,
 
             'affiliate_products_count' =>
                 $this->whenCounted('affiliateProducts'),

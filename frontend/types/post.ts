@@ -22,6 +22,7 @@ export interface Post {
   allow_comments?: boolean;
 
   featured_image?: string;
+  featured_image_path?: string | null;
 
   status: "draft" | "published";
 

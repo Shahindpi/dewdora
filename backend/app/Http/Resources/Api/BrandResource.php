@@ -20,7 +20,9 @@ class BrandResource extends JsonResource
             'slug' => $this->slug,
 
             'website' => $this->website,
-            'logo' => $this->logo,
+            'logo' => ImageUrl::make($this->logo),
+            'logo_path' => $this->logo,
+            'status' => (bool) $this->status,
             'description' => $this->description,
 
             'affiliate_products_count' =>

@@ -4,6 +4,7 @@ namespace App\Http\Resources\Api;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Support\ImageUrl;
 
 class CategoryResource extends JsonResource
 {
@@ -19,7 +20,13 @@ class CategoryResource extends JsonResource
 
             'slug' => $this->slug,
 
+            'parent_id' => $this->parent_id,
+
             'description' => $this->description,
+            'image' => ImageUrl::make($this->image),
+            'image_path' => $this->image,
+            'status' => (bool) $this->status,
+            'sort_order' => (int) $this->sort_order,
 
             'posts_count' => isset($this->posts_count)
                 ? (int) $this->posts_count

@@ -11,6 +11,7 @@ use App\Http\Resources\Api\PostResource;
 use App\Http\Resources\Api\SeoMetaResource;
 
 use App\Support\ImageUrl;
+use App\Support\ResolvedSeo;
 
 class AffiliateProductResource extends JsonResource
 {
@@ -43,6 +44,8 @@ class AffiliateProductResource extends JsonResource
             'price' => $this->price,
 
             'currency' => $this->currency,
+
+            'commission_rate' => $this->commission_rate,
 
             'free_trial' => $this->free_trial,
 
@@ -78,9 +81,11 @@ class AffiliateProductResource extends JsonResource
                 $this->whenLoaded('category')
             ),
 
-            'seo' => SeoMetaResource::make(
-                $this->whenLoaded('seoMeta')
+            'affiliate_network' => AffiliateNetworkResource::make(
+                $this->whenLoaded('affiliateNetwork')
             ),
+
+            'seo' => ResolvedSeo::product($this->resource),
         ];
     }
 }

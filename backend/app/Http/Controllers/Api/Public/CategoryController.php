@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\Public;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\CategoryResource;
 use App\Http\Resources\Api\PostResource;
+use App\Http\Resources\Api\AffiliateProductResource;
+use App\Http\Resources\Api\BrandResource;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use App\Support\ApiResponse;
@@ -33,7 +35,8 @@ class CategoryController extends Controller
             function () use ($request, $perPage) {
 
                 return Category::query()
-                    ->withCount('posts')
+                    ->where('status', true)
+                    ->withCount(['posts' => fn ($query) => $query->published()])
                     ->when(
                         $request->filled('search'),
                         function ($query) use ($request) {
@@ -93,6 +96,7 @@ class CategoryController extends Controller
                     ->with([
                         'seoMeta',
                     ])
+                    ->where('status', true)
                     ->where('slug', $slug)
                     ->firstOrFail();
             }
@@ -122,6 +126,25 @@ class CategoryController extends Controller
             ->latest('published_at')
             ->paginate($perPage);
 
+        $products = $category->affiliateProducts()
+            ->where('status', true)
+            ->with(['brand', 'affiliateNetwork', 'category', 'seoMeta'])
+            ->orderByDesc('featured')
+            ->latest()
+            ->paginate($perPage, ['*'], 'product_page');
+
+        $brands = \App\Models\Brand::query()
+            ->where('status', true)
+            ->whereHas('affiliateProducts', fn ($query) => $query
+                ->where('category_id', $category->id)
+                ->where('status', true))
+            ->withCount(['affiliateProducts' => fn ($query) => $query
+                ->where('category_id', $category->id)
+                ->where('status', true)])
+            ->orderByDesc('affiliate_products_count')
+            ->limit(8)
+            ->get();
+
 
         /*
         |--------------------------------------------------------------------------
@@ -135,9 +158,9 @@ class CategoryController extends Controller
                     $category
                 ),
 
-                'posts' => PostResource::collection(
-                    $posts
-                ),
+                'posts' => ApiResponse::nestedPage(PostResource::collection($posts->getCollection()), $posts),
+                'products' => ApiResponse::nestedPage(AffiliateProductResource::collection($products->getCollection()), $products),
+                'brands' => BrandResource::collection($brands),
             ],
             'Category retrieved successfully.'
         );

@@ -13,6 +13,7 @@ class PublicSiteSettingResource extends JsonResource
         return [
 
             'site_name' => $this->site_name,
+            'google_analytics_id' => $this->google_analytics_id,
 
             'site_tagline' => $this->site_tagline,
 

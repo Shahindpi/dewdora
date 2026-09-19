@@ -3,22 +3,19 @@
 namespace App\Http\Controllers\Api\Public;
 
 use App\Http\Controllers\Controller;
-
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Cache;
-
-use App\Models\Post;
-use App\Models\Category;
-use App\Models\Brand;
-use App\Models\AffiliateProduct;
-
-use App\Http\Resources\Api\PostResource;
-use App\Http\Resources\Api\CategoryResource;
-use App\Http\Resources\Api\BrandResource;
 use App\Http\Resources\Api\AffiliateProductResource;
-
+use App\Http\Resources\Api\BrandResource;
+use App\Http\Resources\Api\CategoryResource;
+use App\Http\Resources\Api\PostResource;
+use App\Models\AffiliateProduct;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Post;
+use App\Models\HeroBanner;
 use App\Services\CacheService;
 use App\Support\ApiResponse;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 
 class HomepageController extends Controller
 {
@@ -38,15 +35,23 @@ class HomepageController extends Controller
                 |--------------------------------------------------------------------------
                 */
 
+                $carouselProducts = AffiliateProduct::query()
+                    ->where('status', true)
+                    ->with(['brand', 'affiliateNetwork', 'category', 'seoMeta'])
+                    ->orderByDesc('created_at')
+                    ->orderByDesc('id')
+                    ->limit(24)
+                    ->get();
+
                 $heroProducts = AffiliateProduct::query()
                     ->where('status', true)
-                    ->where('featured', true)
                     ->with([
                         'brand',
                         'category',
                         'seoMeta.seoable',
                     ])
-                    ->orderByDesc('rating')
+                    ->orderByDesc('featured')
+                    ->orderByDesc('created_at')
                     ->limit(4)
                     ->get();
 
@@ -57,9 +62,10 @@ class HomepageController extends Controller
                 */
 
                 $popularPosts = Post::query()
-                    ->where('status', 'published')
+                    ->published()
                     ->with([
                         'category',
+                        'user',
                         'tags',
                         'seoMeta.seoable',
                     ])
@@ -75,9 +81,10 @@ class HomepageController extends Controller
                 */
 
                 $latestPosts = Post::query()
-                    ->where('status', 'published')
+                    ->published()
                     ->with([
                         'category',
+                        'user',
                         'tags',
                         'seoMeta.seoable',
                     ])
@@ -92,8 +99,12 @@ class HomepageController extends Controller
                 */
 
                 $categories = Category::query()
-                    ->withCount('posts')
-                    ->orderByDesc('posts_count')
+                    ->where('status', true)
+                    ->withCount([
+                        'posts' => fn ($query) => $query->published(),
+                        'affiliateProducts' => fn ($query) => $query->where('status', true),
+                    ])
+                    ->orderByDesc('affiliate_products_count')
                     ->limit(6)
                     ->get();
 
@@ -105,7 +116,7 @@ class HomepageController extends Controller
 
                 $brands = Brand::query()
                     ->where('status', true)
-                    ->withCount('affiliateProducts')
+                    ->withCount(['affiliateProducts' => fn ($query) => $query->where('status', true)])
                     ->orderByDesc('affiliate_products_count')
                     ->limit(8)
                     ->get();
@@ -117,13 +128,15 @@ class HomepageController extends Controller
                 */
 
                 $statistics = [
-                    'posts' => Post::where('status', 'published')->count(),
+                    'posts' => Post::published()->count(),
                     'products' => AffiliateProduct::where('status', true)->count(),
                     'categories' => Category::count(),
                     'brands' => Brand::where('status', true)->count(),
                 ];
 
                 return [
+                    'carousel_products' => AffiliateProductResource::collection($carouselProducts),
+                    'hero_banners' => HeroBanner::query()->where('enabled', true)->orderBy('sort_order')->orderBy('id')->get()->map(fn ($banner) => $banner->publicData()),
                     'hero_products' => AffiliateProductResource::collection($heroProducts),
 
                     'popular_posts' => PostResource::collection($popularPosts),
