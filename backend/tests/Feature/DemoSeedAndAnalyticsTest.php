@@ -4,8 +4,16 @@ namespace Tests\Feature;
 
 use App\Models\AffiliateEvent;
 use App\Models\AffiliateProduct;
+use App\Models\AffiliateNetwork;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Comment;
 use App\Models\HeroBanner;
+use App\Models\NewsletterSubscriber;
 use App\Models\Post;
+use App\Models\Role;
+use App\Models\SiteSetting;
+use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -23,6 +31,17 @@ class DemoSeedAndAnalyticsTest extends TestCase
         $admin = User::where('email', 'admin@example.com')->firstOrFail();
         $this->assertTrue(Hash::check('Admin@1234567', $admin->password));
         $this->assertSame('admin', $admin->role->slug);
+        $this->assertTrue($admin->status);
+        $this->assertSame(4, Role::count());
+        $this->assertSame(4, User::count());
+        $this->assertSame(8, Category::count());
+        $this->assertSame(15, Tag::count());
+        $this->assertSame(8, Brand::count());
+        $this->assertSame(5, AffiliateNetwork::count());
+        $this->assertSame(6, Comment::count());
+        $this->assertSame(5, NewsletterSubscriber::count());
+        $this->assertSame(1, SiteSetting::count());
+        $this->assertSame(80, AffiliateEvent::count());
         $this->assertGreaterThanOrEqual(16, AffiliateProduct::where('status', true)->count());
         $this->assertGreaterThanOrEqual(12, Post::published()->count());
         $this->assertSame(3, HeroBanner::count());
@@ -46,6 +65,13 @@ class DemoSeedAndAnalyticsTest extends TestCase
         $this->assertSame(1, AffiliateEvent::where('session_id', $session)->where('kind', 'impression')->count());
         $this->assertSame($product->brand_id, AffiliateEvent::where('session_id', $session)->firstOrFail()->brand_id);
         $token = $this->postJson('/api/v1/auth/login', ['email' => 'admin@example.com', 'password' => 'Admin@1234567'])->assertOk()->json('data.token');
+        $this->assertNotEmpty($token);
+        foreach (['users', 'roles', 'posts', 'products', 'categories', 'tags', 'brands', 'affiliate-networks', 'hero-banners', 'media', 'dashboard'] as $resource) {
+            $this->withToken($token)->getJson('/api/v1/admin/'.$resource)->assertOk();
+        }
+        foreach (['posts', 'products', 'categories', 'tags', 'brands', 'affiliate-networks', 'homepage'] as $resource) {
+            $this->getJson('/api/v1/public/'.$resource)->assertOk();
+        }
         $this->withToken($token)->getJson('/api/v1/admin/affiliate-analytics')->assertOk()->assertJsonPath('data.products.0.id', $product->id);
     }
 }

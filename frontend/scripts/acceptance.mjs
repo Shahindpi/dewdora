@@ -23,6 +23,13 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
  const stamp=Date.now().toString();
  const check=async(name,fn)=>{await fn();results.push({name,status:'PASS'});console.log('PASS',name);};
  try {
+ await check('Fresh seeded administrator authenticates against Laravel',async()=>{
+  const response=await page.request.post('http://127.0.0.1:8000/api/v1/auth/login',{data:{email:'admin@example.com',password:'Admin@1234567'}});
+  if(response.status()!==200)throw Error('Seeded admin login returned '+response.status());
+  const body=await response.json();if(!body.data?.token||body.data.user?.role?.slug!=='admin')throw Error('Seeded admin token or role missing');
+  const users=await page.request.get('http://127.0.0.1:8000/api/v1/admin/users',{headers:{Authorization:`Bearer ${body.data.token}`}});
+  if(users.status()!==200)throw Error('Seeded admin cannot access users: '+users.status());
+ });
  await check('Browser login with Origin and bearer token',async()=>{
   await page.goto(base+'/auth/login');await page.locator('input[name=email]').fill(email);await page.locator('input[name=password]').fill(password);await page.getByRole('button',{name:'Sign In',exact:true}).click();await page.waitForURL('**/admin');await page.getByRole('heading',{name:/Dashboard/}).waitFor();
  });
@@ -65,7 +72,7 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
   await page.goto(base+'/admin/posts/new');await page.getByLabel('Title',{exact:true}).fill('Browser Review '+stamp);await page.locator('[contenteditable=true]').fill('A detailed review of a useful product with practical guidance.');await page.locator('select').filter({has:page.locator('option[value=published]')}).selectOption('published');await page.getByRole('button',{name:'Publish Post',exact:true}).click();await page.waitForURL('**/admin/posts');
   const row=page.getByRole('row').filter({hasText:'Browser Review '+stamp});await row.getByRole('link',{name:'Browser Review '+stamp,exact:true}).click();await page.getByLabel('Title',{exact:true}).fill('Updated Browser Review '+stamp);await page.getByRole('button',{name:'Save Changes',exact:true}).click();await page.waitForURL('**/admin/posts');await page.goto(base+'/posts/browser-review-'+stamp);await page.getByRole('heading',{name:'Updated Browser Review '+stamp,exact:true}).waitFor();await page.goto(base+'/admin/posts');await page.getByRole('button',{name:'Actions for Updated Browser Review '+stamp,exact:true}).click();await page.getByRole('menuitem',{name:'Delete',exact:true}).click();await page.getByRole('alertdialog').getByRole('button',{name:'Delete',exact:true}).click();await page.getByRole('link',{name:'Updated Browser Review '+stamp,exact:true}).waitFor({state:'detached'});
  });
- for(const path of ['/','/products','/categories','/tags','/brands','/posts','/search?q=Runtime','/contact'])await check('Public '+path,async()=>{const r=await page.goto(base+path);if(r.status()!==200)throw Error(path+' '+r.status());await page.locator('h1').first().waitFor();});
+ for(const path of ['/','/products','/products/northstar-writing-desk','/categories','/categories/ai-tools','/tags','/brands','/brands/northstar-labs','/posts','/posts/choosing-an-ai-writing-companion','/search?q=Runtime','/contact'])await check('Public '+path,async()=>{const r=await page.goto(base+path);if(r.status()!==200)throw Error(path+' '+r.status());await page.locator('h1').first().waitFor();});
  await check('Carousel, SEO, GA events, hero and page sizes',async()=>{
   await page.setViewportSize({width:1440,height:1000});
   await page.goto(base+'/');
