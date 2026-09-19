@@ -79,9 +79,9 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
   if(!await previous.isDisabled()||await next.isDisabled())throw Error('Initial navigation state is wrong');
   await next.click(); await page.waitForTimeout(400);
   if(await previous.isDisabled())throw Error('Previous did not enable');
-  for(let i=0;i<7;i++)if(!await next.isDisabled())await next.click();
+  for(let i=0;i<await cards.count();i++)if(!await next.isDisabled())await next.click();
   if(!await next.isDisabled())throw Error('Next did not stop at last card');
-  for(let i=0;i<8;i++)if(!await previous.isDisabled())await previous.click();
+  for(let i=0;i<await cards.count();i++)if(!await previous.isDisabled())await previous.click();
   if(!await previous.isDisabled())throw Error('Previous did not stop at first card');
   await page.waitForFunction(()=>window.__dewdoraEvents?.some(e=>e[0]==='event'&&e[1]==='affiliate_product_impression'));
   const events=await page.evaluate(()=>window.__dewdoraEvents);
