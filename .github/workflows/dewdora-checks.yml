@@ -127,9 +127,16 @@ jobs:
           trap 'kill "$php_pid" "$next_pid" 2>/dev/null || true' EXIT
           for attempt in {1..30}; do if curl -fsS http://127.0.0.1:3000/products > /dev/null; then break; fi; sleep 1; done
           E2E_ADMIN_EMAIL=runtime@example.test E2E_ADMIN_PASSWORD='RuntimeTest!2026' npm test
-          curl -fsS http://127.0.0.1:3000/products | grep -o '<meta[^>]*>' | grep 'og:title'
-          curl -fsS http://127.0.0.1:3000/products/test-product-8 | grep -o '<meta[^>]*>' | grep 'og:image'
-          curl -fsS http://127.0.0.1:3000/posts/test-review | grep -o '<meta[^>]*>' | grep 'og:type'
+          kill "$next_pid"
+          wait "$next_pid" 2>/dev/null || true
+          export NEXT_PUBLIC_GA_ID=
+          npm run build
+          npm run start -- -p 3001 -H 127.0.0.1 > /tmp/dewdora-next-no-ga.log 2>&1 & next_pid=$!
+          for attempt in {1..30}; do if curl -fsS http://127.0.0.1:3001/ > /dev/null; then break; fi; sleep 1; done
+          node scripts/check-no-ga.mjs
+          curl -fsS http://127.0.0.1:3001/products | grep -o '<meta[^>]*>' | grep 'og:title'
+          curl -fsS http://127.0.0.1:3001/products/test-product-8 | grep -o '<meta[^>]*>' | grep 'og:image'
+          curl -fsS http://127.0.0.1:3001/posts/test-review | grep -o '<meta[^>]*>' | grep 'og:type'
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
