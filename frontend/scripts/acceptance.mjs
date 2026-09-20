@@ -107,6 +107,12 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
   await cards.first().getByRole('link',{name:'View offer ↗'}).click();
   const clicks=await page.evaluate(()=>window.__dewdoraEvents.filter(e=>e[1]==='affiliate_click'));
   if(!clicks.length||!clicks.at(-1)[2].brand_id||clicks.at(-1)[2].placement!=='homepage_popular')throw Error('Click analytics parameters missing');
+  await page.evaluate(()=>document.addEventListener('click',e=>{if(e.target.closest('a[href^="/products/"]'))e.preventDefault()},true));
+  await cards.first().locator('a[href^="/products/"]').last().click();
+  if(!await page.evaluate(()=>window.__dewdoraEvents.some(e=>e[1]==='select_item'&&e[2].placement==='homepage_popular')))throw Error('GA4 product selection missing');
+  await page.goto(base+'/products/northstar-writing-desk');
+  await page.waitForFunction(()=>window.__dewdoraEvents?.some(e=>e[1]==='view_item'&&e[2].placement==='product_page'));
+  await page.goto(base+'/');
   if(!await page.getByRole('heading',{name:'Test hero banner'}).isVisible())throw Error('Hero banner absent');
   const markup=await page.content();if(!(markup.indexOf('Latest Affiliate Products')<markup.indexOf('Popular Affiliate Products')&&markup.indexOf('Popular Affiliate Products')<markup.indexOf('Test hero banner')))throw Error('Homepage sections out of order');
   for(const route of ['/products','/products/test-product-8','/posts/test-review']){
@@ -163,7 +169,7 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
    await page.goto(base+'/');await page.getByRole('heading',{name:'Buying guides & how-tos'}).waitFor();
  });
  await check('Logout revokes the session and protects admin routes',async()=>{
-   await page.goto(base+'/admin');await page.getByText('Dashboard',{exact:true}).first().waitFor();
+   await page.goto(base+'/admin');await page.locator('main').getByRole('heading',{name:/Dashboard/}).waitFor();
    await page.getByLabel('Account menu').click();
    const pending=page.waitForResponse(r=>r.url().endsWith('/auth/logout')&&r.request().method()==='POST');
    await page.getByRole('button',{name:'Logout'}).click();if((await pending).status()!==200)throw Error('Backend logout failed');
