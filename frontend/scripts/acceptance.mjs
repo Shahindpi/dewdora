@@ -18,7 +18,7 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
  await page.addInitScript(() => { window.__dewdoraEvents=[]; window.dataLayer=[]; const originalPush=window.dataLayer.push.bind(window.dataLayer);window.dataLayer.push=(...args)=>{for(const entry of args)window.__dewdoraEvents.push(Array.from(entry));return originalPush(...args);}; });
  const results=[],errors=[],requests=[];
  page.on('pageerror',e=>errors.push(e.message));
- page.on('console',message=>{if(message.text().includes('Encountered a script tag while rendering React component'))errors.push(message.text());});
+ page.on('console',message=>{if(message.text().includes('Encountered a script tag while rendering React component') || message.text().includes('Cannot render a sync or defer <script> outside the main document'))errors.push(message.text());});
  page.on('response',r=>{if(r.url().includes('/api/v1/'))requests.push({url:r.url(),status:r.status()});});
  page.on('dialog',d=>d.accept());
  const base=process.env.E2E_BASE_URL || 'http://127.0.0.1:3000';

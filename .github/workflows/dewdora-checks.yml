@@ -137,6 +137,12 @@ jobs:
           curl -fsS http://127.0.0.1:3001/products | grep -o '<meta[^>]*>' | grep 'og:title'
           curl -fsS http://127.0.0.1:3001/products/test-product-8 | grep -o '<meta[^>]*>' | grep 'og:image'
           curl -fsS http://127.0.0.1:3001/posts/test-review | grep -o '<meta[^>]*>' | grep 'og:type'
+          kill "$next_pid"
+          wait "$next_pid" 2>/dev/null || true
+          python3 -c "from pathlib import Path; from shutil import rmtree; p=Path('.next'); rmtree(p) if p.is_dir() else None"
+          npm run dev -- -p 3002 -H 127.0.0.1 > /tmp/dewdora-next-dev.log 2>&1 & next_pid=$!
+          for attempt in {1..45}; do if curl -fsS http://127.0.0.1:3002/ > /dev/null; then break; fi; sleep 1; done
+          NO_GA_BASE_URL=http://127.0.0.1:3002 node scripts/check-no-ga.mjs
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
