@@ -28,7 +28,9 @@ assert login["token"] and login["user"]["role"]["slug"] == "admin"
 assert login["user"]["status"] is True
 token = login["token"]
 homepage = request("/public/homepage")
-assert len(homepage["carousel_products"]) == 16
+assert len(homepage["carousel_products"]) == 12
+assert len(homepage["latest_products"]) == 12
+assert len(request("/public/products?per_page=3&page=5")) == 3
 assert len(homepage["hero_banners"]) >= 1
 assert homepage["statistics"]["products"] == 16
 with urlopen(homepage["carousel_products"][0]["featured_image"], timeout=20) as image:
@@ -41,4 +43,4 @@ request("/public/products/northstar-writing-desk")
 request("/public/posts/choosing-an-ai-writing-companion")
 request("/public/categories/ai-tools")
 request("/public/brands/northstar-labs")
-print("Seeded admin login, 24 public/admin API requests and image loading passed; homepage has 16 products and visible banners.")
+print("Seeded admin login, public/admin API requests and image loading passed; homepage has 12 initial products and 16 total products.")
