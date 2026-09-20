@@ -6,8 +6,10 @@ import { HeroBannerSection, type HeroBanner } from "@/components/public/hero-ban
 import Link from "next/link";
 import { NewsletterForm } from "@/components/public/forms";
 import { SiteShell } from "@/components/public/site-shell";
+import { RetryHomepage } from "@/components/public/retry-homepage";
+import { unstable_rethrow } from "next/navigation";
 import { PostCard, ProductCard } from "@/components/public/cards";
-import { safePublicGet, type PublicPost, type PublicProduct, type PublicCategory } from "@/lib/public-api";
+import { safePublicGet, PublicApiError, type PublicPost, type PublicProduct, type PublicCategory } from "@/lib/public-api";
 import type { ApiResponse } from "@/types/api";
 
 export const metadata = pageMetadata("/", "Product discovery and buying guides");
@@ -22,7 +24,15 @@ type Home = {
 };
 const sections = Object.fromEntries(homepageSectionKeys.map(key => [key, true])) as Record<Section, boolean>;
 export default async function HomePage() {
-  const response = await safePublicGet<ApiResponse<Partial<Home>>>("homepage", { data: {}, success: false });
+  let response: ApiResponse<Partial<Home>>;
+  try {
+    response = await safePublicGet<ApiResponse<Partial<Home>>>("homepage", { data: {}, success: false });
+  } catch (error) {
+    unstable_rethrow(error);
+    // An upstream failure should be visible without exposing Laravel's exception details.
+    console.error("Dewdora homepage API failed", error);
+    return <SiteShell><section role="alert" className="rounded-2xl border border-[#dce6d9] bg-white p-8"><h1 className="text-3xl font-bold">Homepage temporarily unavailable</h1><p className="mt-3 text-[#567069]">We could not load the latest products and articles. Please try again shortly.</p><RetryHomepage />{error instanceof PublicApiError && error.status === 500 && <p className="mt-5 text-sm text-[#567069]">Site administrators: check the Laravel log and pending database migrations.</p>}</section></SiteShell>;
+  }
   const source = response.data || {};
   const list = <T,>(value: T[] | undefined): T[] => Array.isArray(value) ? value : [];
   const data: Home = {

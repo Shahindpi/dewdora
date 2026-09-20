@@ -4,11 +4,19 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import { safePublicGet } from "@/lib/public-api";
 import type { ApiResponse } from "@/types/api";
+import { unstable_rethrow } from "next/navigation";
 import { MobileNav } from "@/components/public/mobile-nav";
 
 
 export async function SiteShell({ children }: { children: ReactNode }) {
-  const { data: settings } = await safePublicGet<ApiResponse<{ logo?: string | null }>>("settings", { success: false, data: {} });
+  let settings: { logo?: string | null } = {};
+  try {
+    const response = await safePublicGet<ApiResponse<{ logo?: string | null }>>("settings", { success: false, data: {} });
+    settings = response.data || {};
+  } catch (error) {
+    unstable_rethrow(error);
+    console.error("Dewdora public settings API failed", error);
+  }
   return <div className="min-h-screen bg-[#f8f8f2] text-[#18352d]">
     <header className="sticky top-0 z-50 border-b border-[#dce6d9] bg-white/95 shadow-sm backdrop-blur"><div className="relative mx-auto flex max-w-6xl items-center justify-between gap-5 px-6 py-3 sm:py-5">
       <Link href={routes.home} aria-label="Dewdora homepage"><Image unoptimized src={settings.logo || "/dewdora-logo.svg"} alt="Dewdora" width={186} height={48} className="h-12 w-auto object-contain" /></Link>

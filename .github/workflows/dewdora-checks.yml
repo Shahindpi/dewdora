@@ -143,6 +143,8 @@ jobs:
           npm run dev -- -p 3002 -H 127.0.0.1 > /tmp/dewdora-next-dev.log 2>&1 & next_pid=$!
           for attempt in {1..45}; do if curl -fsS http://127.0.0.1:3002/ > /dev/null; then break; fi; sleep 1; done
           NO_GA_BASE_URL=http://127.0.0.1:3002 node scripts/check-no-ga.mjs
+          php -r '$db = new PDO("sqlite:../backend/database/acceptance.sqlite"); $db->exec("DROP TABLE affiliate_events");'
+          node scripts/check-api-outage.mjs
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
