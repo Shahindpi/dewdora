@@ -1,4 +1,5 @@
 "use client";
+import { routes } from "@/lib/routes";
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -90,7 +91,7 @@ export function ProductForm({ product }: { product?: AffiliateProduct }) {
       await queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       await queryClient.invalidateQueries({ queryKey: ["admin-product"] });
       toast.success(product ? "Product updated." : "Product created.");
-      router.push("/admin/products");
+      router.push(routes.admin.products.index);
       router.refresh();
     } catch (error) {
       toast.error(apiErrorMessage(error, "Could not save product."));
@@ -345,7 +346,7 @@ export function ProductForm({ product }: { product?: AffiliateProduct }) {
             </button>
             <button
               type="button"
-              onClick={() => router.push("/admin/products")}
+              onClick={() => router.push(routes.admin.products.index)}
               className="w-full rounded-lg border px-5 py-3"
             >
               Cancel

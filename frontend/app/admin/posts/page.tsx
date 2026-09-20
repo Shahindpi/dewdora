@@ -1,4 +1,5 @@
 "use client";
+import { routes } from "@/lib/routes";
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
@@ -33,7 +34,7 @@ export default function PostsPage() {
           title="Posts"
           description="Manage blog posts and AI tool reviews."
         />
-        <Link href="/admin/posts/new" className={buttonVariants()}>
+        <Link href={routes.admin.posts.create} className={buttonVariants()}>
           <Plus className="mr-2 h-4 w-4" />
           New post
         </Link>

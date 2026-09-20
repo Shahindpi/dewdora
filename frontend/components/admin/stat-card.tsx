@@ -2,13 +2,14 @@
 
 import { LucideIcon } from "lucide-react";
 import Link from "next/link";
+import type { Route } from "next";
 
 interface Props {
   title: string;
   value: number | string;
   icon: LucideIcon;
   color: string;
-  href?: string;
+  href?: Route;
 }
 
 export default function StatCard({

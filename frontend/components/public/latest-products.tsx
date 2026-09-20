@@ -1,4 +1,5 @@
 "use client";
+import { routes } from "@/lib/routes";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -68,7 +69,7 @@ export function LatestProducts({ products }: { products: PublicProduct[] }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items.length, ended, error, loading]);
   return <section aria-label="Latest Affiliate Products" className="mt-2">
-    <div className="mb-6 flex items-end justify-between gap-4"><div><p className="text-sm font-bold uppercase tracking-widest text-[#2c9873]">Freshly added</p><h1 className="mt-2 text-3xl font-black sm:text-4xl">Latest Affiliate Products</h1><p className="mt-2 text-[#567069]">New tools worth a closer look.</p></div><Link href="/products" className="shrink-0 font-semibold text-[#165e46] hover:underline">View all →</Link></div>
+    <div className="mb-6 flex items-end justify-between gap-4"><div><p className="text-sm font-bold uppercase tracking-widest text-[#2c9873]">Freshly added</p><h1 className="mt-2 text-3xl font-black sm:text-4xl">Latest Affiliate Products</h1><p className="mt-2 text-[#567069]">New tools worth a closer look.</p></div><Link href={routes.products.index} className="shrink-0 font-semibold text-[#165e46] hover:underline">View all →</Link></div>
     <div ref={grid} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((product, position) => <article key={product.id} data-position={position} className="overflow-hidden rounded-2xl border border-[#dce6d9] bg-white shadow-sm">
         <TrackedProductLink product={product} placement="homepage_latest" className="block bg-[#eef4ec]"><div className="relative h-56 sm:h-64">{product.featured_image ? <Image unoptimized fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" src={imageUrl(product.featured_image)} alt={product.name} className="object-contain p-4" /> : <span className="grid h-full place-items-center">View product</span>}</div></TrackedProductLink>
@@ -78,6 +79,6 @@ export function LatestProducts({ products }: { products: PublicProduct[] }) {
     <div ref={sentinel} aria-hidden="true" className="h-px" />
     {loading && <div role="status" className="mt-5 grid animate-pulse gap-5 sm:grid-cols-2 lg:grid-cols-3">{[0, 1, 2].map(index => <div key={index} className="h-72 rounded-2xl bg-[#e4ece2]" />)}<span className="sr-only">Loading more products</span></div>}
     {error && <p role="alert" className="mt-5">Could not load more products. <button type="button" onClick={() => void loadMore()} className="cursor-pointer font-bold underline">Retry</button></p>}
-    {items.length >= 21 && <p className="mt-6 text-center text-[#567069]">Want to explore more? <Link href="/products" className="font-bold text-[#165e46] underline">View all products</Link></p>}
+    {items.length >= 21 && <p className="mt-6 text-center text-[#567069]">Want to explore more? <Link href={routes.products.index} className="font-bold text-[#165e46] underline">View all products</Link></p>}
   </section>;
 }

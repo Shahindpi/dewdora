@@ -1,4 +1,5 @@
 "use client";
+import { routes } from "@/lib/routes";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -69,7 +70,7 @@ export default function PostsTable({ posts }: Props) {
               <TableCell>
                 <div className="space-y-1">
                   <Link
-                    href={`/admin/posts/${post.id}`}
+                    href={routes.admin.posts.edit(post.id)}
                     className="font-medium hover:text-primary"
                   >
                     {post.title}

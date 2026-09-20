@@ -1,4 +1,5 @@
 "use client";
+import { routes } from "@/lib/routes";
 
 import Link from "next/link";
 
@@ -47,7 +48,7 @@ export default function PopularPosts({
       </div>
 
       <Link
-        href={"/admin/posts"}
+        href={routes.admin.posts.index}
         className="mt-6 inline-block text-primary text-sm font-medium"
         >
         View All Posts →

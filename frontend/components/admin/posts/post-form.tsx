@@ -1,4 +1,5 @@
 "use client";
+import { routes } from "@/lib/routes";
 
 import { useEffect, useState } from "react";
 import slugify from "slugify";
@@ -208,7 +209,7 @@ export default function PostForm({ mode, post }: Props) {
           : "Post updated successfully.",
       );
 
-      router.push("/admin/posts");
+      router.push(routes.admin.posts.index);
     },
 
     onError: (error: {

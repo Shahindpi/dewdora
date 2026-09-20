@@ -1,4 +1,5 @@
 "use client";
+import { routes } from "@/lib/routes";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -71,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       queryClient.clear();
       setUser(null);
 
-      router.replace("/auth/login");
+      router.replace(routes.login);
     }
   }, [router, queryClient]);
 
@@ -79,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unauthorized = () => {
       queryClient.clear();
       setUser(null);
-      router.replace("/auth/login");
+      router.replace(routes.login);
     };
     window.addEventListener("dewdora:unauthorized", unauthorized);
     return () =>

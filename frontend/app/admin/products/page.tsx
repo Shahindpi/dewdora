@@ -1,4 +1,5 @@
 "use client";
+import { routes } from "@/lib/routes";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -45,7 +46,7 @@ export default function ProductsPage() {
           </p>
         </div>
         <Link
-          href="/admin/products/new"
+          href={routes.admin.products.create}
           className="rounded-lg bg-primary px-5 py-3 text-primary-foreground"
         >
           Add affiliate product
@@ -113,7 +114,7 @@ export default function ProductsPage() {
                 </td>
                 <td className="p-4">
                   <Link
-                    href={`/admin/products/${product.id}`}
+                    href={routes.admin.products.edit(product.id)}
                     className="mr-4 text-primary"
                   >
                     Edit

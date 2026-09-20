@@ -1,4 +1,5 @@
 "use client";
+import { routes } from "@/lib/routes";
 
 import { useQuery } from "@tanstack/react-query";
 
@@ -65,7 +66,7 @@ export default function DashboardPage() {
           value={overview.statistics.posts}
           icon={FileText}
           color="#2563EB"
-          href="/admin/posts"
+          href={routes.admin.posts.index}
         />
 
         <StatCard
@@ -73,7 +74,7 @@ export default function DashboardPage() {
           value={overview.statistics.categories}
           icon={FolderTree}
           color="#EA580C"
-          href="/admin/categories"
+          href={routes.admin.categories}
         />
 
         <StatCard
@@ -81,7 +82,7 @@ export default function DashboardPage() {
           value={overview.statistics.products}
           icon={ShoppingBag}
           color="#16A34A"
-          href="/admin/products"
+          href={routes.admin.products.index}
         />
 
         <StatCard
@@ -89,7 +90,7 @@ export default function DashboardPage() {
           value={overview.statistics.users}
           icon={Users}
           color="#7C3AED"
-          href="/admin/users"
+          href={routes.admin.users.index}
         />
 
         <StatCard
@@ -97,7 +98,7 @@ export default function DashboardPage() {
           value={overview.statistics.tags}
           icon={MessageSquare}
           color="#DC2626"
-          href="/admin/tags"
+          href={routes.admin.tags}
         />
 
         <StatCard
@@ -105,7 +106,7 @@ export default function DashboardPage() {
           value={overview.statistics.brands}
           icon={ShoppingBag}
           color="#0891B2"
-          href="/admin/brands"
+          href={routes.admin.brands}
         />
 
         <StatCard
@@ -113,7 +114,7 @@ export default function DashboardPage() {
           value={overview.statistics.affiliate_networks}
           icon={Mail}
           color="#0F766E"
-          href="/admin/networks"
+          href={routes.admin.networks}
         />
 
         <StatCard
@@ -121,7 +122,7 @@ export default function DashboardPage() {
           value={overview.statistics.published_posts}
           icon={Eye}
           color="#64748B"
-          href="/admin/posts"
+          href={routes.admin.posts.index}
         />
       </div>
 

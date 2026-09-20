@@ -1,4 +1,5 @@
 "use client";
+import { routes } from "@/lib/routes";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -20,7 +21,7 @@ export default function LoginForm() {
   const form = useForm<LoginValues>({ resolver: zodResolver(schema), defaultValues: { email: "", password: "" } });
   async function onSubmit(values: LoginValues) {
     setError(""); setLoading(true);
-    try { await login(values.email, values.password); router.replace("/admin"); }
+    try { await login(values.email, values.password); router.replace(routes.admin.dashboard); }
     catch (reason: unknown) { setError((reason as { response?: { data?: { message?: string } } })?.response?.data?.message || "Unable to sign in. Check your details and try again."); }
     finally { setLoading(false); }
   }

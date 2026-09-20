@@ -1,3 +1,4 @@
+import { routes } from "@/lib/routes";
 import { SiteShell } from "@/components/public/site-shell";
 import Link from "next/link";
 import { PostCard, ProductCard } from "@/components/public/cards";
@@ -65,7 +66,7 @@ export default async function Page({
                 {response.data.categories?.map((category) => (
                   <Link
                     key={`category-${category.id}`}
-                    href={`/categories/${category.slug}`}
+                    href={routes.categories.show(category.slug)}
                     className="rounded-full border bg-white px-4 py-2 font-semibold hover:border-[#2c9873]"
                   >
                     {category.name} category
@@ -74,7 +75,7 @@ export default async function Page({
                 {response.data.brands?.map((brand) => (
                   <Link
                     key={`brand-${brand.id}`}
-                    href={`/brands/${brand.slug}`}
+                    href={routes.brands.show(brand.slug)}
                     className="rounded-full border bg-white px-4 py-2 font-semibold hover:border-[#2c9873]"
                   >
                     {brand.name} brand

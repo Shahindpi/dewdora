@@ -18,6 +18,7 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
  await page.addInitScript(() => { window.__dewdoraEvents=[]; window.dataLayer=[]; const originalPush=window.dataLayer.push.bind(window.dataLayer);window.dataLayer.push=(...args)=>{for(const entry of args)window.__dewdoraEvents.push(Array.from(entry));return originalPush(...args);}; });
  const results=[],errors=[],requests=[];
  page.on('pageerror',e=>errors.push(e.message));
+ page.on('console',message=>{if(message.text().includes('Encountered a script tag while rendering React component'))errors.push(message.text());});
  page.on('response',r=>{if(r.url().includes('/api/v1/'))requests.push({url:r.url(),status:r.status()});});
  page.on('dialog',d=>d.accept());
  const base=process.env.E2E_BASE_URL || 'http://127.0.0.1:3000';
@@ -158,6 +159,22 @@ if (!email || !password) throw new Error('Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASS
  await page.goto(base+'/');await page.screenshot({path:path.join(output, 'desktop.png'),fullPage:true});
  await check('Mobile admin navigation and no horizontal overflow',async()=>{await page.setViewportSize({width:390,height:844});await page.goto(base+'/admin/users');await page.getByRole('heading',{name:'Users',exact:true}).waitFor();await page.getByRole('row').filter({hasText:email}).waitFor();if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Horizontal overflow');await page.getByRole('button',{name:'Open admin navigation'}).click();await page.getByRole('dialog').getByRole('link',{name:'Categories',exact:true}).waitFor();await page.screenshot({path:path.join(output, 'mobile-admin.png'),fullPage:true});});
  await check('Mobile public homepage',async()=>{await page.goto(base+'/');await page.locator('h1').waitFor();const latest=page.getByRole('region',{name:'Latest Affiliate Products'}),cards=latest.getByRole('article');const first=await cards.first().boundingBox(),second=await cards.nth(1).boundingBox();if(!first||!second||first.width<300||Math.abs(second.x-first.x)>5||second.y<=first.y)throw Error('Mobile latest grid should show one card per row');await page.getByRole('button',{name:'Open navigation'}).click();const mobileNav=page.getByRole('navigation',{name:'Mobile navigation'});await mobileNav.waitFor({state:'visible'});if(await page.getByRole('button',{name:'Close navigation'}).getAttribute('aria-expanded')!=='true')throw Error('Mobile menu aria-expanded is wrong');await mobileNav.getByRole('link',{name:'Products'}).click();await page.waitForURL('**/products');await page.goto(base+'/');if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Horizontal overflow');await page.screenshot({path:path.join(output,'mobile-home.png'),fullPage:true});});
+ await check('Public and admin navigation resolves real pages',async()=>{
+   for(const [label,path] of [['Products','/products'],['Categories','/categories'],['Reviews & Guides','/posts'],['Brands','/brands'],['Search','/search'],['Contact','/contact']]){
+     await page.goto(base+'/');await page.getByRole('button',{name:'Open navigation'}).click();
+     await page.getByRole('navigation',{name:'Mobile navigation'}).getByRole('link',{name:label,exact:true}).click();
+     await page.waitForURL(base+path);if(!await page.locator('h1').count())throw Error('Missing heading on '+path);
+   }
+   await page.setViewportSize({width:1440,height:1000});await page.goto(base+'/');
+   const latest=page.getByRole('region',{name:'Latest Affiliate Products'});
+   await latest.getByRole('article').first().locator('a[href^="/products/"]').first().click();await page.waitForURL(/\/products\/[^/]+$/);
+   for(const [name,path] of [['Posts','/admin/posts'],['Products','/admin/products'],['Categories','/admin/categories'],['Tags','/admin/tags'],['Brands','/admin/brands'],['Networks','/admin/networks'],['Media','/admin/media'],['Users','/admin/users'],['Roles','/admin/roles'],['Affiliate analytics','/admin/analytics'],['Settings','/admin/settings']]){
+     await page.goto(base+'/admin');await page.locator('aside').getByRole('link',{name,exact:true}).click();await page.waitForURL(base+path);
+   }
+   for(const [path,target] of [['/admin/posts','/admin/posts/new'],['/admin/products','/admin/products/new'],['/admin/users','/admin/users/new']]){
+     await page.goto(base+path);const link=page.locator(`a[href="${target}"]`);await link.click();await page.waitForURL(base+target);
+   }
+ });
  await check('Homepage sections visibility persists through the API',async()=>{
    await page.goto(base+'/admin/homepage-settings');await page.getByRole('heading',{name:'Homepage sections'}).waitFor();
    const toggle=page.getByRole('checkbox',{name:'Show Buying Guides / How-tos'});await toggle.uncheck();

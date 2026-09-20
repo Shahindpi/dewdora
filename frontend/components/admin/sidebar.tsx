@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-// import type { Route } from "next";
+import { routes } from "@/lib/routes";
 
 import Logo from "@/components/layout/logo";
 import { cn } from "@/lib/utils";
@@ -26,24 +26,24 @@ import {
 } from "lucide-react";
 
 const items = [
-  { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { label: "Affiliate analytics", href: "/admin/analytics", icon: ChartNoAxesCombined },
-  { label: "Posts", href: "/admin/posts", icon: FileText },
-  { label: "Hero banners", href: "/admin/hero-banners", icon: PanelTop },
-  { label: "Homepage sections", href: "/admin/homepage-settings", icon: PanelTop },
-  { label: "Categories", href: "/admin/categories", icon: FolderTree },
-  { label: "Tags", href: "/admin/tags", icon: Tags },
-  { label: "Products", href: "/admin/products", icon: ShoppingBag },
-  { label: "Brands", href: "/admin/brands", icon: Building2 },
-  { label: "Networks", href: "/admin/networks", icon: BadgeDollarSign },
-  { label: "Media", href: "/admin/media", icon: ImageIcon },
-  { label: "Subscribers", href: "/admin/subscribers", icon: Mail },
-  { label: "Comments", href: "/admin/comments", icon: MessageSquare },
-  { label: "Contacts", href: "/admin/contacts", icon: Mail },
-  { label: "Users", href: "/admin/users", icon: Users },
-  { label: "Roles", href: "/admin/roles", icon: ShieldCheck },
-  { label: "Profile", href: "/admin/profile", icon: Settings },
-  { label: "Settings", href: "/admin/settings", icon: Settings },
+  { label: "Dashboard", href: routes.admin.dashboard, icon: LayoutDashboard },
+  { label: "Affiliate analytics", href: routes.admin.analytics, icon: ChartNoAxesCombined },
+  { label: "Posts", href: routes.admin.posts.index, icon: FileText },
+  { label: "Hero banners", href: routes.admin.heroBanners, icon: PanelTop },
+  { label: "Homepage sections", href: routes.admin.homepageSettings, icon: PanelTop },
+  { label: "Categories", href: routes.admin.categories, icon: FolderTree },
+  { label: "Tags", href: routes.admin.tags, icon: Tags },
+  { label: "Products", href: routes.admin.products.index, icon: ShoppingBag },
+  { label: "Brands", href: routes.admin.brands, icon: Building2 },
+  { label: "Networks", href: routes.admin.networks, icon: BadgeDollarSign },
+  { label: "Media", href: routes.admin.media, icon: ImageIcon },
+  { label: "Subscribers", href: routes.admin.subscribers, icon: Mail },
+  { label: "Comments", href: routes.admin.comments, icon: MessageSquare },
+  { label: "Contacts", href: routes.admin.contacts, icon: Mail },
+  { label: "Users", href: routes.admin.users.index, icon: Users },
+  { label: "Roles", href: routes.admin.roles, icon: ShieldCheck },
+  { label: "Profile", href: routes.admin.profile, icon: Settings },
+  { label: "Settings", href: routes.admin.settings, icon: Settings },
 ] as const;
 
 export default function Sidebar({ mobile = false }: { mobile?: boolean }) {

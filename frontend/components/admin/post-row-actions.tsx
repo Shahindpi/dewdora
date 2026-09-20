@@ -1,4 +1,5 @@
 "use client";
+import { routes } from "@/lib/routes";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -59,7 +60,7 @@ export default function PostRowActions({
 
         <DropdownMenuContent align="end">
           <DropdownMenuItem
-            onClick={() => router.push(`/admin/posts/${id}`)}
+            onClick={() => router.push(routes.admin.posts.edit(id))}
           >
             <Pencil className="h-4 w-4" />
             Edit

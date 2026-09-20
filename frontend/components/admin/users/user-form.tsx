@@ -1,4 +1,5 @@
 "use client";
+import { routes } from "@/lib/routes";
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -46,7 +47,7 @@ export function UserForm({ user }: { user?: User }) {
       await queryClient.invalidateQueries({ queryKey: ["users"] });
       await queryClient.invalidateQueries({ queryKey: ["user"] });
       toast.success(user ? "User updated." : "User created.");
-      router.push("/admin/users");
+      router.push(routes.admin.users.index);
       router.refresh();
     } catch (error) {
       toast.error(apiErrorMessage(error, "Could not save user."));
@@ -82,7 +83,7 @@ export function UserForm({ user }: { user?: User }) {
       <label className="text-sm font-medium">Role<select className={input} name="role_id" required value={roleId} onChange={event => setRoleId(event.target.value)}><option value="">Select a role</option>{roles.filter(role => role.status).map(role => <option key={role.id} value={role.id}>{role.name}</option>)}</select></label>
       <label className="flex items-center gap-3 self-end rounded-lg border p-3 text-sm font-medium"><input type="checkbox" name="status" defaultChecked={user?.status ?? true} /> Active user</label>
       {!user && <><label className="text-sm font-medium">Password<input className={input} name="password" type="password" minLength={8} required /></label><label className="text-sm font-medium">Confirm password<input className={input} name="password_confirmation" type="password" minLength={8} required /></label></>}
-      <div className="flex gap-3 md:col-span-2"><button disabled={busy} className="rounded-lg bg-primary px-5 py-3 text-primary-foreground disabled:opacity-50">{busy ? "Saving…" : "Save user"}</button><button type="button" onClick={() => router.push("/admin/users")} className="rounded-lg border px-5 py-3">Cancel</button></div>
+      <div className="flex gap-3 md:col-span-2"><button disabled={busy} className="rounded-lg bg-primary px-5 py-3 text-primary-foreground disabled:opacity-50">{busy ? "Saving…" : "Save user"}</button><button type="button" onClick={() => router.push(routes.admin.users.index)} className="rounded-lg border px-5 py-3">Cancel</button></div>
     </form>
     {user && <form onSubmit={changePassword} className="grid gap-5 rounded-2xl border bg-background p-6 md:grid-cols-2"><div className="md:col-span-2"><h2 className="text-xl font-semibold">Reset password</h2><p className="text-sm text-muted-foreground">Changing the password revokes this user&apos;s active API sessions.</p></div><label className="text-sm font-medium">New password<input className={input} name="password" type="password" minLength={8} required /></label><label className="text-sm font-medium">Confirm password<input className={input} name="password_confirmation" type="password" minLength={8} required /></label><button disabled={passwordBusy} className="w-fit rounded-lg border px-5 py-3">{passwordBusy ? "Changing…" : "Change password"}</button></form>}
   </div>;
