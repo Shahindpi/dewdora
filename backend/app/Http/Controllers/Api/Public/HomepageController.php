@@ -42,7 +42,7 @@ class HomepageController extends Controller
                     ->with(['brand', 'affiliateNetwork', 'category', 'seoMeta'])
                     ->orderByDesc('created_at')
                     ->orderByDesc('id')
-                    ->limit(24)
+                    ->limit(12)
                     ->get();
 
                 // First-party clicks rank products; impressions and recency break ties.
@@ -51,8 +51,8 @@ class HomepageController extends Controller
                     ->where('status', true)
                     ->with(['brand', 'affiliateNetwork', 'category', 'seoMeta'])
                     ->withCount([
-                        'events as clicks_count' => fn ($events) => $events->where('kind', 'click'),
-                        'events as impressions_count' => fn ($events) => $events->where('kind', 'impression'),
+                        'events as clicks_count' => fn ($events) => $events->where('kind', 'click')->where('is_demo', false),
+                        'events as impressions_count' => fn ($events) => $events->where('kind', 'impression')->where('is_demo', false),
                     ])
                     ->orderByDesc('clicks_count')
                     ->orderByDesc('impressions_count')

@@ -57,7 +57,8 @@ class AffiliateProductController extends Controller
                         'category:id,name,slug',
                         'seoMeta:id,seoable_id,seoable_type,meta_title,meta_description,canonical_url',
                     ])
-                    ->latest()
+                    ->orderByDesc('created_at')
+                    ->orderByDesc('id')
                     ->paginate($perPage);
             }
         );
