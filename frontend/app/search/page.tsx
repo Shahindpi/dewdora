@@ -88,7 +88,7 @@ export default async function Page({
               <h2 className="mt-10 text-2xl font-bold">Products</h2>
               <div className="mt-5 grid gap-6 md:grid-cols-3">
                 {response.data.products?.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} placement="search_results" />
                 ))}
               </div>
             </section>

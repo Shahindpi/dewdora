@@ -25,7 +25,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     {post.content && <div className="dewdora-content mt-9 leading-8 text-[#34554a]" dangerouslySetInnerHTML={{ __html: post.content }} />}
     <div className="mt-8 flex flex-wrap gap-2">{post.tags?.map(tag => <Link key={tag.id} href={`/tags/${tag.slug}`} className="rounded-full border px-4 py-2 text-sm">#{tag.name}</Link>)}</div>
     {post.allow_comments && <Comments slug={slug} />}</article>
-    {!!post.affiliate_products?.length && <section className="mt-16"><h2 className="text-2xl font-bold">Tools mentioned</h2><div className="mt-6 grid gap-6 md:grid-cols-3">{post.affiliate_products.map((product: PublicProduct) => <ProductCard key={product.id} product={product} />)}</div></section>}
+    {!!post.affiliate_products?.length && <section className="mt-16"><h2 className="text-2xl font-bold">Tools mentioned</h2><div className="mt-6 grid gap-6 md:grid-cols-3">{post.affiliate_products.map((product: PublicProduct) => <ProductCard key={product.id} product={product} placement="article_page" />)}</div></section>}
     {!!related_posts?.length && <section className="mt-16"><h2 className="text-2xl font-bold">Keep reading</h2><div className="mt-6 grid gap-6 md:grid-cols-3">{related_posts.map(related => <PostCard key={related.id} post={related} />)}</div></section>}
   </SiteShell>;
 }
