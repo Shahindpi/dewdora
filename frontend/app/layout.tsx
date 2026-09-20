@@ -10,7 +10,6 @@ import { ReduxProvider } from "@/providers/redux-provider";
 
 import { Toaster } from "sonner";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
-import Script from "next/script";
 
 export default function RootLayout({
   children,
@@ -19,9 +18,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <Script id="dewdora-theme" strategy="beforeInteractive">{"try{const t=localStorage.getItem('theme');const d=t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light'}catch(e){}"}</Script>
-      </head>
       <body>
         <ThemeProvider>
           <ReduxProvider>

@@ -15,6 +15,7 @@ try {
   const response = await page.goto(base + '/');
   if (response.status() !== 200) throw Error(`Homepage returned ${response.status()}`);
   await page.getByRole('heading', { name: 'Latest Affiliate Products' }).waitFor();
+  if (await page.locator('#dewdora-theme').count()) throw Error('Theme inline script still rendered');
   await page.getByRole('region', { name: 'Latest Affiliate Products' }).getByRole('article').first().locator('a[href^="/products/"]').first().click();
   await page.getByRole('heading', { level: 1 }).waitFor();
   if (tagRequests.length || errors.length) throw Error(JSON.stringify({ tagRequests, errors }));
