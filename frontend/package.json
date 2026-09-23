@@ -3,12 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "clean:next-types": "node scripts/clean-next-types.mjs",
+    "prebuild": "npm run clean:next-types",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "test": "node scripts/acceptance.mjs",
     "performance": "node scripts/performance-baseline.mjs",
+    "pretypecheck": "npm run clean:next-types",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
