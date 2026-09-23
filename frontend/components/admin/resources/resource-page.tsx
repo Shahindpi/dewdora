@@ -16,7 +16,7 @@ type Field = {
 type Config = { title: string; endpoint: ResourceEndpoint; fields: Field[] };
 const name: Field = { key: "name", label: "Name", required: true };
 const slug: Field = { key: "slug", label: "Slug" };
-const resources: Record<string, Config> = {
+export const resources: Record<string, Config> = {
   categories: {
     title: "Categories",
     endpoint: "categories",
