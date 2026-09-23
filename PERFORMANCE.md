@@ -17,6 +17,22 @@ Before provider isolation, route-referenced JavaScript from the production clien
 
 The public reduction comes from scoping Redux, React Query, authentication, theme and toast providers to `/admin` or `/auth`, and rendering post cards on the server. Admin functionality retains those dependencies, while the rich-text editor is dynamically loaded only by post/product forms. Public product/post media now uses responsive AVIF/WebP delivery through Next Image with stable dimensions and lazy loading; only above-the-fold detail media, the first latest-product image and site logo are prioritized.
 
+The post-change production benchmark on GitHub's Ubuntu runner (seeded SQLite, local Laravel and Next production servers) recorded:
+
+| Page | Response end | Load | Transfer | CLS |
+| --- | ---: | ---: | ---: | ---: |
+| Homepage | 155 ms | 608 ms | 257 KB | 0 |
+| Products | 43 ms | 82 ms | 203 KB | 0 |
+| Product detail | 48 ms | 239 ms | 191 KB | 0.0058 |
+| Categories | 36 ms | 55 ms | 349 KB | 0 |
+| Category detail | 42 ms | 65 ms | 198 KB | 0 |
+| Posts | 48 ms | 72 ms | 202 KB | 0 |
+| Post detail | 57 ms | 269 ms | 211 KB | 0.0005 |
+| Login | 6 ms | 68 ms | 307 KB | 0.0001 |
+| Admin dashboard | 7 ms | 58 ms | 389 KB | 0 |
+
+Warm API medians were 45.93 ms for the rich homepage response, 12.88 ms for products, 14.24 ms for product detail, 9.27 ms for categories, 14.69 ms for category detail, 13.53 ms for posts, 15.70 ms for post detail, 12.71 ms for the admin dashboard, and 17.13 ms for admin products. These figures are CI baselines, not Internet user timings; retain the generated JSON artifact and compare future runs on the same runner/database shape.
+
 ## Backend changes
 
 The homepage remains cached for six hours and preserves its response contract. Product detail now caches the product plus related products/posts under the public cache version. Related post recommendations and category detail result pages are cached with resource version, slug and pagination parameters. New composite indexes cover latest products, category/brand product listings, real-event popularity counts, popular posts and category posts.
