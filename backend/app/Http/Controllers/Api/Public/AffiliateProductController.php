@@ -53,10 +53,12 @@ class AffiliateProductController extends Controller
                     ->when($request->filled('category'), fn ($query) => $query->whereHas('category', fn ($category) => $category->where('slug', $request->input('category'))))
                     ->with([
                         'brand:id,name,slug,logo',
+                        'affiliateNetwork:id,name,slug,website',
                         'category:id,name,slug',
                         'seoMeta:id,seoable_id,seoable_type,meta_title,meta_description,canonical_url',
                     ])
-                    ->latest()
+                    ->orderByDesc('created_at')
+                    ->orderByDesc('id')
                     ->paginate($perPage);
             }
         );
@@ -82,6 +84,7 @@ class AffiliateProductController extends Controller
                     ->where('featured', true)
                     ->with([
                         'brand',
+                        'affiliateNetwork',
                         'category',
 
                         'seoMeta' => function ($query) {
@@ -107,12 +110,12 @@ class AffiliateProductController extends Controller
      */
     public function show(string $slug): JsonResponse
     {
-        $product = Cache::remember(
-            CacheService::publicProductKey($slug),
-            now()->addHours(6),
+        $version = Cache::get('public_cache_version', 0);
+        $data = Cache::remember(
+            CacheService::publicProductKey($slug) . "_{$version}_detail",
+            now()->addMinutes(30),
             function () use ($slug) {
-
-                return AffiliateProduct::query()
+                $product = AffiliateProduct::query()
                     ->where('slug', $slug)
                     ->where('status', true)
                     ->with([
@@ -124,12 +127,28 @@ class AffiliateProductController extends Controller
                         },
                     ])
                     ->firstOrFail();
+
+                $relatedProducts = AffiliateProduct::query()
+                    ->where('status', true)
+                    ->whereKeyNot($product->id)
+                    ->when($product->category_id, fn ($query) => $query->where('category_id', $product->category_id))
+                    ->with(['brand', 'affiliateNetwork', 'category', 'seoMeta'])
+                    ->orderByDesc('featured')->orderByDesc('created_at')->orderByDesc('id')
+                    ->limit(4)->get();
+
+                $relatedPosts = $product->posts()->published()
+                    ->with(['category', 'tags', 'seoMeta'])
+                    ->latest('published_at')->limit(4)->get();
+
+                return compact('product', 'relatedProducts', 'relatedPosts');
             }
         );
 
         return ApiResponse::success(
             [
-                'product' => new AffiliateProductResource($product),
+                'product' => new AffiliateProductResource($data['product']),
+                'related_products' => AffiliateProductResource::collection($data['relatedProducts']),
+                'related_posts' => PostResource::collection($data['relatedPosts']),
             ],
             'Affiliate product retrieved successfully.'
         );

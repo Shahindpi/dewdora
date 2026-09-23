@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\AdminPageSize;
 use App\Models\AffiliateProduct;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -98,13 +99,7 @@ class AffiliateProductController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $perPage = min(
-            max(
-                (int) $request->input('per_page', 15),
-                1
-            ),
-            100
-        );
+        $perPage = AdminPageSize::resolve($request, $query, 15);
 
         $products = $query->paginate($perPage);
 
@@ -159,6 +154,8 @@ class AffiliateProductController extends Controller
         */
 
         $product = AffiliateProduct::create($validated);
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         /*
         |--------------------------------------------------------------------------
@@ -196,10 +193,10 @@ class AffiliateProductController extends Controller
             'seoMeta',
         ]);
 
-        return response()->json([
-            'success' => true,
-            'data' => $affiliateProduct,
-        ]);
+        return ApiResponse::success(
+            new AffiliateProductResource($affiliateProduct),
+            'Affiliate product retrieved successfully.'
+        );
     }
 
 
@@ -261,6 +258,7 @@ class AffiliateProductController extends Controller
             'brand',
             'affiliateNetwork',
             'category',
+            'seoMeta',
         ]);
 
         /*
@@ -271,12 +269,13 @@ class AffiliateProductController extends Controller
 
         CacheService::clearProduct($oldSlug);
         CacheService::clearProduct($affiliateProduct->slug);
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Affiliate product updated successfully.',
-            'data' => $affiliateProduct,
-        ]);
+        return ApiResponse::success(
+            new AffiliateProductResource($affiliateProduct),
+            'Affiliate product updated successfully.'
+        );
     }
 
     /**
@@ -292,7 +291,11 @@ class AffiliateProductController extends Controller
         |--------------------------------------------------------------------------
         */
 
+        $slug = $affiliateProduct->slug;
         $affiliateProduct->delete();
+        CacheService::clearProduct($slug);
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         return response()->json([
             'success' => true,

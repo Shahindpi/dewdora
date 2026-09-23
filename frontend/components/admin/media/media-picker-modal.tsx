@@ -1,11 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import Image from "next/image";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ImagePlus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,20 +23,12 @@ interface Props {
   onSelect: (image: MediaItem) => void;
 }
 
-export default function MediaPickerModal({
-  open,
-  onClose,
-  onSelect,
-}: Props) {
+export default function MediaPickerModal({ open, onClose, onSelect }: Props) {
   const queryClient = useQueryClient();
 
-  const [selectedFile, setSelectedFile] =
-    useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const {
-    data: media = [],
-    isLoading,
-  } = useQuery({
+  const { data: media = [], isLoading } = useQuery({
     queryKey: ["media"],
     queryFn: getMedia,
     enabled: open,
@@ -58,10 +47,10 @@ export default function MediaPickerModal({
         const items = Array.isArray(old) ? old : [];
 
         return [
-            image,
-            ...items.filter((item: MediaItem) => item.path !== image.path),
+          image,
+          ...items.filter((item: MediaItem) => item.path !== image.path),
         ];
-        });
+      });
 
       setSelectedFile(null);
 
@@ -72,12 +61,7 @@ export default function MediaPickerModal({
     },
 
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      console.error(error);
-
-      toast.error(
-        error?.response?.data?.message ??
-          "Failed to upload image."
-      );
+      toast.error(error?.response?.data?.message ?? "Failed to upload image.");
     },
   });
 
@@ -127,70 +111,63 @@ export default function MediaPickerModal({
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) =>
-                setSelectedFile(
-                  e.target.files?.[0] ?? null
-                )
-              }
+              onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
             />
           </label>
 
           <Button
             type="button"
             className="mt-6 w-full cursor-pointer"
-            disabled={
-              !selectedFile || upload.isPending
-            }
+            disabled={!selectedFile || upload.isPending}
             onClick={() => {
               if (selectedFile) {
                 upload.mutate(selectedFile);
               }
             }}
           >
-            {upload.isPending
-              ? "Uploading Image..."
-              : "Upload Image"}
+            {upload.isPending ? "Uploading Image..." : "Upload Image"}
           </Button>
         </div>
 
         {/* Media Grid */}
         {isLoading ? (
           <div className="grid grid-cols-2 gap-4 py-8 md:grid-cols-4">
-            {Array.from({ length: 8 }).map(
-              (_, index) => (
-                <div
-                  key={index}
-                  className="aspect-square animate-pulse rounded-xl bg-muted"
-                />
-              )
-            )}
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div
+                key={index}
+                className="aspect-square animate-pulse rounded-xl bg-muted"
+              />
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {media.length > 0 ? (
-                media.map((image, index) => (
+              media.map((image, index) => (
                 <button
-                    key={`${image.path}-${index}`}
-                    type="button"
-                    className="cursor-pointer overflow-hidden rounded-xl border transition hover:border-primary"
-                    onClick={() => {
+                  key={`${image.path}-${index}`}
+                  type="button"
+                  className="cursor-pointer overflow-hidden rounded-xl border transition hover:border-primary"
+                  onClick={() => {
                     onSelect(image);
                     onClose();
-                    }}
+                  }}
                 >
-                    <img
+                  <Image
+                    unoptimized
+                    width={320}
+                    height={320}
                     src={image.url}
                     alt={image.name}
                     className="aspect-square w-full object-cover"
-                    />
+                  />
                 </button>
-                ))
+              ))
             ) : (
-                <div className="col-span-full py-10 text-center text-sm text-muted-foreground">
+              <div className="col-span-full py-10 text-center text-sm text-muted-foreground">
                 No images found.
-                </div>
+              </div>
             )}
-            </div>
+          </div>
         )}
       </DialogContent>
     </Dialog>

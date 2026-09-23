@@ -10,6 +10,7 @@ use App\Http\Resources\SiteSettingResource;
 use App\Models\SiteSetting;
 
 use App\Services\CacheService;
+use App\Support\HomepageSections;
 use App\Support\ApiResponse;
 
 use Illuminate\Http\JsonResponse;
@@ -56,6 +57,28 @@ class SiteSettingController extends Controller
         return ApiResponse::success(
             SiteSettingResource::make($settings->refresh()),
             'Site settings updated successfully.'
+        );
+    }
+
+    public function updateHomepage(Request $request): JsonResponse
+    {
+        $keys = array_keys(HomepageSections::DEFAULTS);
+        $validated = $request->validate([
+            'homepage_sections' => ['required', 'array'],
+            'homepage_sections.*' => ['boolean'],
+        ]);
+        $sections = $validated['homepage_sections'];
+        if (array_diff(array_keys($sections), $keys) || array_diff($keys, array_keys($sections))) {
+            return ApiResponse::error('Every supported homepage section must be provided.', null, 422);
+        }
+        $settings = $this->settings();
+        $settings->update(['homepage_sections' => $sections]);
+        CacheService::clearSiteSettings();
+        CacheService::clearHomepage();
+
+        return ApiResponse::success(
+            SiteSettingResource::make($settings->refresh()),
+            'Homepage settings saved successfully.'
         );
     }
 

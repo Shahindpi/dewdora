@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Http\Resources\Api\AffiliateNetworkResource;
 use App\Services\CacheService;
 use App\Support\ApiResponse;
+use Illuminate\Support\Facades\Cache;
 
 class AffiliateNetworkController extends Controller
 {
@@ -28,17 +29,13 @@ class AffiliateNetworkController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $cacheKey = CacheService::publicAffiliateNetworksKey(
-            $request->query(),
-            $perPage
-        );
+        $cacheKey = CacheService::publicAffiliateNetworksKey() . '_' . Cache::get('public_cache_version', 0) . '_' . md5(json_encode($request->query()));
 
-        return CacheService::remember(
-            $cacheKey,
-            function () use ($request, $perPage) {
+        $networks = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($request, $perPage) {
 
                 $networks = AffiliateNetwork::query()
-                    ->withCount('affiliateProducts')
+                    ->where('status', true)
+                    ->withCount(['affiliateProducts' => fn ($query) => $query->where('status', true)])
 
                     /*
                     |--------------------------------------------------------------------------
@@ -79,12 +76,10 @@ class AffiliateNetworkController extends Controller
 
                     ->paginate($perPage);
 
-                return ApiResponse::paginated(
-                    AffiliateNetworkResource::collection($networks),
-                    'Affiliate networks retrieved successfully.'
-                );
-            }
-        );
+                return $networks;
+            });
+
+        return ApiResponse::paginated(AffiliateNetworkResource::collection($networks), 'Affiliate networks retrieved successfully.');
     }
 
     /**
@@ -98,22 +93,19 @@ class AffiliateNetworkController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $cacheKey = CacheService::publicAffiliateNetworkKey($slug);
+        $cacheKey = CacheService::publicAffiliateNetworkKey($slug) . '_' . Cache::get('public_cache_version', 0);
 
-        return CacheService::remember(
-            $cacheKey,
-            function () use ($slug) {
+        $affiliateNetwork = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($slug) {
 
                 $affiliateNetwork = AffiliateNetwork::query()
-                    ->withCount('affiliateProducts')
+                    ->where('status', true)
+                    ->withCount(['affiliateProducts' => fn ($query) => $query->where('status', true)])
                     ->where('slug', $slug)
                     ->firstOrFail();
 
-                return ApiResponse::success(
-                    new AffiliateNetworkResource($affiliateNetwork),
-                    'Affiliate network retrieved successfully.'
-                );
-            }
-        );
+                return $affiliateNetwork;
+            });
+
+        return ApiResponse::success(new AffiliateNetworkResource($affiliateNetwork), 'Affiliate network retrieved successfully.');
     }
 }

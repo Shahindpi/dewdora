@@ -21,7 +21,7 @@ class AdminMiddleware
             ], 401);
         }
 
-        if (! $user->role || $user->role->slug !== 'admin') {
+        if (! $user->status || ! $user->role || ! $user->role->status || $user->role->slug !== 'admin') {
             return response()->json([
                 'success' => false,
                 'message' => 'Forbidden.',

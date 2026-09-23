@@ -61,3 +61,11 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 ## Dewdora API
 
 The versioned API root is `/api/v1`. Public routes live at `/api/v1/public/*`, login at `/api/v1/auth/login`, and authenticated admin routes at `/api/v1/admin/*`. Set the environment's `CORS_ALLOWED_ORIGINS` to the Next.js origin, configure the database, run `composer install`, `php artisan migrate`, and `php artisan storage:link`. Run `composer test` for the backend tests. Publishing a post through the admin API now sets `published_at` if it was omitted; publishing controls public visibility.
+
+### Local demo database
+
+Configure `.env` with a development database, then run `php artisan migrate:fresh --seed` (or `composer db:reset-demo`) and `php artisan storage:link`. The reset command **deletes all existing tables and data in the configured database**. The default seeder is guarded against production and provides four roles and sample accounts, eight categories and brands, five affiliate networks, sixteen active products, fifteen posts (twelve published), three hero banners, comments, newsletter subscribers, sample images and affiliate analytics events. It is safe to run `php artisan db:seed` again without duplicating these records.
+
+The development administrator is `admin@example.com` with password `Admin@1234567`. Replace this account and password before using any seeded database outside local development. Other demo accounts use `editor@example.test`, `author@example.test` and `viewer@example.test` with password `DemoPassword!2026`. Configure the frontend with `NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api/v1` and `API_URL=http://127.0.0.1:8000/api/v1`, then run `php artisan serve` and `npm run dev` from `frontend/` in separate terminals. The admin UI is at `/admin/login`. For a production database, run `php artisan migrate --force` and create real users through your deployment process; the default demo seeder does not run in production.
+
+The public `POST /api/v1/public/affiliate-events` records an active product's impression or click using a UUID `session_id`. `GET /api/v1/admin/affiliate-analytics` returns product and brand totals for authenticated administrators.

@@ -1,39 +1,40 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-
-use App\Http\Controllers\Api\AuthController;
-
-use App\Http\Controllers\Api\Admin\PostController;
-use App\Http\Controllers\Api\Admin\CategoryController;
-use App\Http\Controllers\Api\Admin\TagController;
-use App\Http\Controllers\Api\Admin\AffiliateProductController;
-use App\Http\Controllers\Api\Admin\SeoMetaController;
-use App\Http\Controllers\Api\Admin\DashboardController;
-use App\Http\Controllers\Api\Admin\BrandController;
 use App\Http\Controllers\Api\Admin\AffiliateNetworkController;
-use App\Http\Controllers\Api\Admin\NewsletterSubscriberController;
-use App\Http\Controllers\Api\Admin\ContactMessageController;
+use App\Http\Controllers\Api\Admin\AffiliateProductController;
+use App\Http\Controllers\Api\Admin\AffiliateAnalyticsController;
+use App\Http\Controllers\Api\Admin\BrandController;
+use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\CommentController as AdminCommentController;
-use App\Http\Controllers\Api\Admin\ProfileController;
-use App\Http\Controllers\Api\Admin\SiteSettingController;
-
-use App\Http\Controllers\Api\Public\AffiliateNetworkController as PublicAffiliateNetworkController;
-use App\Http\Controllers\Api\Public\BrandController as PublicBrandController;
-use App\Http\Controllers\Api\Public\PostController as PublicPostController;
-use App\Http\Controllers\Api\Public\CategoryController as PublicCategoryController;
-use App\Http\Controllers\Api\Public\TagController as PublicTagController;
-use App\Http\Controllers\Api\Public\AffiliateProductController as PublicAffiliateProductController;
-use App\Http\Controllers\Api\Admin\UploadController;
-use App\Http\Controllers\Api\Public\SearchController;
-use App\Http\Controllers\Api\Public\HomepageController;
+use App\Http\Controllers\Api\Admin\ContactMessageController;
+use App\Http\Controllers\Api\Admin\DashboardController;
+use App\Http\Controllers\Api\Admin\HeroBannerController;
 use App\Http\Controllers\Api\Admin\MediaController;
-use App\Http\Controllers\Api\Public\NewsletterController;
-use App\Http\Controllers\Api\Public\ContactController;
+use App\Http\Controllers\Api\Admin\NewsletterSubscriberController;
+use App\Http\Controllers\Api\Admin\PostController;
+use App\Http\Controllers\Api\Admin\ProfileController;
+use App\Http\Controllers\Api\Admin\RoleController;
+use App\Http\Controllers\Api\Admin\SeoMetaController;
+use App\Http\Controllers\Api\Admin\SiteSettingController;
+use App\Http\Controllers\Api\Admin\TagController;
+use App\Http\Controllers\Api\Admin\UploadController;
+use App\Http\Controllers\Api\Admin\UserController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\Public\AffiliateNetworkController as PublicAffiliateNetworkController;
+use App\Http\Controllers\Api\Public\AffiliateProductController as PublicAffiliateProductController;
+use App\Http\Controllers\Api\Public\AffiliateEventController;
+use App\Http\Controllers\Api\Public\BrandController as PublicBrandController;
+use App\Http\Controllers\Api\Public\CategoryController as PublicCategoryController;
 use App\Http\Controllers\Api\Public\CommentController;
-use App\Http\Controllers\Api\Public\SiteSettingController as PublicSiteSettingController;
+use App\Http\Controllers\Api\Public\ContactController;
 use App\Http\Controllers\Api\Public\HomeController;
+use App\Http\Controllers\Api\Public\HomepageController;
+use App\Http\Controllers\Api\Public\NewsletterController;
+use App\Http\Controllers\Api\Public\PostController as PublicPostController;
+use App\Http\Controllers\Api\Public\SearchController;
+use App\Http\Controllers\Api\Public\SiteSettingController as PublicSiteSettingController;
+use App\Http\Controllers\Api\Public\TagController as PublicTagController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -210,6 +211,8 @@ Route::prefix('v1')->group(function () {
             |--------------------------------------------------------------------------
             */
 
+            Route::post('/affiliate-events', [AffiliateEventController::class, 'store']);
+
             Route::get('/products/featured', [
                 PublicAffiliateProductController::class,
                 'featured',
@@ -237,9 +240,9 @@ Route::prefix('v1')->group(function () {
             |--------------------------------------------------------------------------
             */
 
-            Route::get('/brands', [PublicBrandController::class,'index',]);
+            Route::get('/brands', [PublicBrandController::class, 'index']);
 
-            Route::get('/brands/{slug}', [PublicBrandController::class,'show',]);
+            Route::get('/brands/{slug}', [PublicBrandController::class, 'show']);
 
             /*
             |--------------------------------------------------------------------------
@@ -275,14 +278,12 @@ Route::prefix('v1')->group(function () {
 
         });
 
-    
-        /*
+    /*
     |--------------------------------------------------------------------------
     | Authenticated API Routes
     |--------------------------------------------------------------------------
     */
     Route::middleware('auth:sanctum')->group(function () {
-
 
         /*
         |--------------------------------------------------------------------------
@@ -310,351 +311,358 @@ Route::prefix('v1')->group(function () {
             ->prefix('admin')
             ->group(function () {
 
-            /*
-            |--------------------------------------------------------------------------
-            | Site Settings
-            |--------------------------------------------------------------------------
-            */
-
-            Route::get('/settings', [
-                SiteSettingController::class,
-                'show',
-            ]);
-
-            Route::put('/settings', [
-                SiteSettingController::class,
-                'update',
-            ]);
-
-            Route::post('/settings/assets', [
-                SiteSettingController::class,
-                'uploadAssets',
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Comment Moderation
-            |--------------------------------------------------------------------------
-            */
-
-            Route::get('/comments', [
-                AdminCommentController::class,
-                'index',
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Comment Statistics
-            |--------------------------------------------------------------------------
-            */
-
-            Route::get('/comments/statistics', [
-                AdminCommentController::class,
-                'statistics',
-            ]);
-
-            Route::get('/comments/{comment}', [
-                AdminCommentController::class,
-                'show',
-            ]);
-
-            Route::patch('/comments/{comment}/approve', [
-                AdminCommentController::class,
-                'approve',
-            ]);
-
-            Route::patch('/comments/{comment}/spam', [
-                AdminCommentController::class,
-                'spam',
-            ]);
-
-            Route::patch('/comments/{comment}/reject', [
-                AdminCommentController::class,
-                'reject',
-            ]);
-
-            Route::delete('/comments/{comment}', [
-                AdminCommentController::class,
-                'destroy',
-            ]);
-            /*
-            |--------------------------------------------------------------------------
-            | Contact Messages
-            |--------------------------------------------------------------------------
-            */
-
-            Route::get('/contact/messages', [
-                ContactMessageController::class,
-                'index',
-            ]);
-
-            Route::get('/contact/messages/{message}', [
-                ContactMessageController::class,
-                'show',
-            ]);
-
-            Route::patch('/contact/messages/{message}/read', [
-                ContactMessageController::class,
-                'markRead',
-            ]);
-
-            Route::patch('/contact/messages/{message}/archive', [
-                ContactMessageController::class,
-                'archive',
-            ]);
-
-            Route::patch('/contact/messages/{message}/restore', [
-                ContactMessageController::class,
-                'restore',
-            ]);
-
-            Route::delete('/contact/messages/{message}', [
-                ContactMessageController::class,
-                'destroy',
-            ]);
-            
-            /*
-            |--------------------------------------------------------------------------
-            | Newsletter Subscribers
-            |--------------------------------------------------------------------------
-            */
-
-            Route::get('/newsletter/subscribers', [
-                NewsletterSubscriberController::class,
-                'index',
-            ]);
-
-            Route::get('/newsletter/subscribers/{subscriber}', [
-                NewsletterSubscriberController::class,
-                'show',
-            ]);
-
-            Route::patch('/newsletter/subscribers/{subscriber}/status', [
-                NewsletterSubscriberController::class,
-                'updateStatus',
-            ]);
-
-            Route::delete('/newsletter/subscribers/{subscriber}', [
-                NewsletterSubscriberController::class,
-                'destroy',
-            ]);
-
-            Route::get('/newsletter/statistics', [
-                NewsletterSubscriberController::class,
-                'statistics',
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Dashboard
-            |--------------------------------------------------------------------------
-            */
-
-            Route::get('/dashboard', [
-                DashboardController::class,
-                'index',
-            ]);
-
-            Route::get('/dashboard/analytics', [
-                DashboardController::class,
-                'analytics',
-            ]);
-
-            Route::get('/dashboard/health', [
-                DashboardController::class,
-                'health',
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Admin Profile
-            |--------------------------------------------------------------------------
-            */
-
-            Route::get('/profile', [
-                ProfileController::class,
-                'show',
-            ]);
-
-            Route::put('/profile', [
-                ProfileController::class,
-                'update',
-            ]);
-
-            Route::put('/profile/password', [
-                ProfileController::class,
-                'changePassword',
-            ]);
-
-            Route::post('/profile/avatar', [
-                ProfileController::class,
-                'uploadAvatar',
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Media Library
-            |--------------------------------------------------------------------------
-            */
-
-            Route::get('/media', [
-                MediaController::class,
-                'index',
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Uploads
-            |--------------------------------------------------------------------------
-            */
-
-            Route::post('/upload/image', [
-                UploadController::class,
-                'image',
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Media Upload
-            |--------------------------------------------------------------------------
-            */
-
-            Route::post('/media/upload', [
-                MediaController::class,
-                'upload',
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Replace Image
-            |--------------------------------------------------------------------------
-            */
-
-            Route::post('/media/replace', [
-                MediaController::class,
-                'replace',
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Delete Image
-            |--------------------------------------------------------------------------
-            */
-
-            Route::delete('/media/delete', [
-                MediaController::class,
-                'destroy',
-            ]);
-
-            Route::get('/dashboard/overview', [
-                DashboardController::class,
-                'overview',
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Popular Posts Analytics
-            |--------------------------------------------------------------------------
-            */
-
-            Route::get('/dashboard/popular-posts', [
-                DashboardController::class,
-                'popularPosts',
-            ]);
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Posts
-            |--------------------------------------------------------------------------
-            */
-
-            Route::put('/posts/{post}/tags', [
-                PostController::class,
-                'syncTags',
-            ]);
-
-            Route::put('/posts/{post}/affiliate-products', [
-                PostController::class,
-                'syncAffiliateProducts',
-            ]);
-
-            Route::apiResource('posts', PostController::class);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Categories
-            |--------------------------------------------------------------------------
-            */
-
-            Route::apiResource('categories', CategoryController::class);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Tags
-            |--------------------------------------------------------------------------
-            */
-
-            Route::apiResource('tags', TagController::class);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Affiliate Products
-            |--------------------------------------------------------------------------
-            */
-
-            Route::apiResource(
-                'affiliate-products',
-                AffiliateProductController::class
-            );
-
-            /*
-            |--------------------------------------------------------------------------
-            | SEO Metadata
-            |--------------------------------------------------------------------------
-            */
-
-            Route::put('/posts/{post}/seo', [
-                SeoMetaController::class,
-                'updatePostSeo',
-            ]);
-
-            Route::delete('/posts/{post}/seo', [
-                SeoMetaController::class,
-                'destroyPostSeo',
-            ]);
-
-            Route::put('/affiliate-products/{affiliateProduct}/seo', [
-                SeoMetaController::class,
-                'updateAffiliateProductSeo',
-            ]);
-
-            Route::delete('/affiliate-products/{affiliateProduct}/seo', [
-                SeoMetaController::class,
-                'destroyAffiliateProductSeo',
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Brands
-            |--------------------------------------------------------------------------
-            */
-
-            Route::apiResource('brands', BrandController::class);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Affiliate Networks
-            |--------------------------------------------------------------------------
-            */
-
-            Route::apiResource(
-                'affiliate-networks',
-                AffiliateNetworkController::class
-            );
-
-                
-                                
-        });
+                /*
+                |--------------------------------------------------------------------------
+                | Site Settings
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get('/settings', [
+                    SiteSettingController::class,
+                    'show',
+                ]);
+
+                Route::put('/settings/homepage', [SiteSettingController::class, 'updateHomepage']);
+
+                Route::put('/settings', [
+                    SiteSettingController::class,
+                    'update',
+                ]);
+
+                Route::post('/settings/assets', [
+                    SiteSettingController::class,
+                    'uploadAssets',
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Comment Moderation
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get('/comments', [
+                    AdminCommentController::class,
+                    'index',
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Comment Statistics
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get('/comments/statistics', [
+                    AdminCommentController::class,
+                    'statistics',
+                ]);
+
+                Route::get('/comments/{comment}', [
+                    AdminCommentController::class,
+                    'show',
+                ]);
+
+                Route::patch('/comments/{comment}/approve', [
+                    AdminCommentController::class,
+                    'approve',
+                ]);
+
+                Route::patch('/comments/{comment}/spam', [
+                    AdminCommentController::class,
+                    'spam',
+                ]);
+
+                Route::patch('/comments/{comment}/reject', [
+                    AdminCommentController::class,
+                    'reject',
+                ]);
+
+                Route::delete('/comments/{comment}', [
+                    AdminCommentController::class,
+                    'destroy',
+                ]);
+                /*
+                |--------------------------------------------------------------------------
+                | Contact Messages
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get('/contact/messages', [
+                    ContactMessageController::class,
+                    'index',
+                ]);
+
+                Route::get('/contact/messages/{message}', [
+                    ContactMessageController::class,
+                    'show',
+                ]);
+
+                Route::patch('/contact/messages/{message}/read', [
+                    ContactMessageController::class,
+                    'markRead',
+                ]);
+
+                Route::patch('/contact/messages/{message}/archive', [
+                    ContactMessageController::class,
+                    'archive',
+                ]);
+
+                Route::patch('/contact/messages/{message}/restore', [
+                    ContactMessageController::class,
+                    'restore',
+                ]);
+
+                Route::delete('/contact/messages/{message}', [
+                    ContactMessageController::class,
+                    'destroy',
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Newsletter Subscribers
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get('/newsletter/subscribers', [
+                    NewsletterSubscriberController::class,
+                    'index',
+                ]);
+
+                Route::get('/newsletter/subscribers/{subscriber}', [
+                    NewsletterSubscriberController::class,
+                    'show',
+                ]);
+
+                Route::patch('/newsletter/subscribers/{subscriber}/status', [
+                    NewsletterSubscriberController::class,
+                    'updateStatus',
+                ]);
+
+                Route::delete('/newsletter/subscribers/{subscriber}', [
+                    NewsletterSubscriberController::class,
+                    'destroy',
+                ]);
+
+                Route::get('/newsletter/statistics', [
+                    NewsletterSubscriberController::class,
+                    'statistics',
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Dashboard
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get('/dashboard', [
+                    DashboardController::class,
+                    'index',
+                ]);
+
+                Route::get('/dashboard/analytics', [
+                    DashboardController::class,
+                    'analytics',
+                ]);
+
+                Route::get('/dashboard/health', [
+                    DashboardController::class,
+                    'health',
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Admin Profile
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get('/profile', [
+                    ProfileController::class,
+                    'show',
+                ]);
+
+                Route::put('/profile', [
+                    ProfileController::class,
+                    'update',
+                ]);
+
+                Route::put('/profile/password', [
+                    ProfileController::class,
+                    'changePassword',
+                ]);
+
+                Route::post('/profile/avatar', [
+                    ProfileController::class,
+                    'uploadAvatar',
+                ]);
+
+                Route::put('/users/{user}/password', [UserController::class, 'resetPassword']);
+                Route::apiResource('users', UserController::class);
+                Route::apiResource('roles', RoleController::class);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Media Library
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get('/media', [
+                    MediaController::class,
+                    'index',
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Uploads
+                |--------------------------------------------------------------------------
+                */
+
+                Route::post('/upload/image', [
+                    UploadController::class,
+                    'image',
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Media Upload
+                |--------------------------------------------------------------------------
+                */
+
+                Route::post('/media/upload', [
+                    MediaController::class,
+                    'upload',
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Replace Image
+                |--------------------------------------------------------------------------
+                */
+
+                Route::post('/media/replace', [
+                    MediaController::class,
+                    'replace',
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Delete Image
+                |--------------------------------------------------------------------------
+                */
+
+                Route::delete('/media/delete', [
+                    MediaController::class,
+                    'destroy',
+                ]);
+
+                Route::get('/affiliate-analytics', [AffiliateAnalyticsController::class, 'index']);
+
+                Route::get('/dashboard/overview', [
+                    DashboardController::class,
+                    'overview',
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Popular Posts Analytics
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get('/dashboard/popular-posts', [
+                    DashboardController::class,
+                    'popularPosts',
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Posts
+                |--------------------------------------------------------------------------
+                */
+
+                Route::put('/posts/{post}/tags', [
+                    PostController::class,
+                    'syncTags',
+                ]);
+
+                Route::put('/posts/{post}/affiliate-products', [
+                    PostController::class,
+                    'syncAffiliateProducts',
+                ]);
+
+                Route::apiResource('posts', PostController::class);
+
+                Route::apiResource('hero-banners', HeroBannerController::class)->parameters(['hero-banners' => 'heroBanner']);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Categories
+                |--------------------------------------------------------------------------
+                */
+
+                Route::apiResource('categories', CategoryController::class);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Tags
+                |--------------------------------------------------------------------------
+                */
+
+                Route::apiResource('tags', TagController::class);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Affiliate Products
+                |--------------------------------------------------------------------------
+                */
+
+                Route::apiResource(
+                    'affiliate-products',
+                    AffiliateProductController::class
+                )->parameters(['affiliate-products' => 'affiliateProduct']);
+
+                /*
+                |--------------------------------------------------------------------------
+                | SEO Metadata
+                |--------------------------------------------------------------------------
+                */
+
+                Route::put('/posts/{post}/seo', [
+                    SeoMetaController::class,
+                    'updatePostSeo',
+                ]);
+
+                Route::delete('/posts/{post}/seo', [
+                    SeoMetaController::class,
+                    'destroyPostSeo',
+                ]);
+
+                Route::put('/affiliate-products/{affiliateProduct}/seo', [
+                    SeoMetaController::class,
+                    'updateAffiliateProductSeo',
+                ]);
+
+                Route::delete('/affiliate-products/{affiliateProduct}/seo', [
+                    SeoMetaController::class,
+                    'destroyAffiliateProductSeo',
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Brands
+                |--------------------------------------------------------------------------
+                */
+
+                Route::apiResource('brands', BrandController::class);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Affiliate Networks
+                |--------------------------------------------------------------------------
+                */
+
+                Route::apiResource(
+                    'affiliate-networks',
+                    AffiliateNetworkController::class
+                )->parameters(['affiliate-networks' => 'affiliateNetwork']);
+
+            });
     });
 });

@@ -1,12 +1,15 @@
 "use client";
 
 import { LucideIcon } from "lucide-react";
+import Link from "next/link";
+import type { Route } from "next";
 
 interface Props {
   title: string;
   value: number | string;
   icon: LucideIcon;
   color: string;
+  href?: Route;
 }
 
 export default function StatCard({
@@ -14,9 +17,10 @@ export default function StatCard({
   value,
   icon: Icon,
   color,
+  href,
 }: Props) {
-  return (
-    <div className="rounded-2xl border bg-background p-6 shadow-sm hover:shadow-md transition-shadow">
+  const card = (
+    <div className="h-full rounded-2xl border bg-background p-6 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-5">
         <div
           className="h-12 w-12 rounded-xl flex items-center justify-center"
@@ -34,4 +38,5 @@ export default function StatCard({
       <h2 className="mt-2 text-3xl font-bold">{value}</h2>
     </div>
   );
+  return href ? <Link href={href}>{card}</Link> : card;
 }

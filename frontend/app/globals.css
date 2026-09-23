@@ -2,6 +2,30 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Shared interaction rhythm across the public site and CMS. */
+a, button, summary, select { transition: color .18s ease, background-color .18s ease, border-color .18s ease, box-shadow .18s ease; }
+a:focus-visible, button:focus-visible, summary:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid #2c9873;
+  outline-offset: 2px;
+}
+button:not(:disabled), summary, select { cursor: pointer; }
+.admin-area table tbody tr { transition: background-color .18s ease; }
+.admin-area table tbody tr:hover { background-color: var(--muted); }
+.admin-area main { width: 100%; max-width: 90rem; margin-inline: auto; }
+
+.dewdora-content h1,
+.dewdora-content h2,
+.dewdora-content h3 { margin: 1.5em 0 .55em; font-weight: 800; line-height: 1.2; }
+.dewdora-content h1 { font-size: 2rem; }
+.dewdora-content h2 { font-size: 1.6rem; }
+.dewdora-content h3 { font-size: 1.3rem; }
+.dewdora-content p { margin: 1em 0; }
+.dewdora-content ul { margin: 1em 0; list-style: disc; padding-left: 1.5rem; }
+.dewdora-content ol { margin: 1em 0; list-style: decimal; padding-left: 1.5rem; }
+.dewdora-content blockquote { margin: 1.5em 0; border-left: 4px solid #2c9873; padding-left: 1rem; color: #567069; }
+.dewdora-content a { color: #165e46; text-decoration: underline; }
+.dewdora-content img { margin: 1.5rem auto; max-width: 100%; border-radius: 1rem; }
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -128,3 +152,8 @@
     @apply font-sans;
   }
 }
+
+/* Older CMS panels still use light utility classes; keep their surfaces and text legible in dark mode. */
+.dark .admin-area .bg-white, .dark .admin-area .bg-slate-50 { background-color: var(--background); color: var(--foreground); }
+.dark .admin-area .text-slate-500, .dark .admin-area .text-slate-600 { color: var(--muted-foreground); }
+.dark .admin-area input, .dark .admin-area textarea, .dark .admin-area select { background-color: var(--background); color: var(--foreground); }

@@ -5,12 +5,14 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Support\ImageUrl;
+use App\Support\HomepageSections;
 
 class SiteSettingResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
         return [
+            'homepage_sections' => HomepageSections::resolve($this->homepage_sections),
 
             'site_name' => $this->site_name,
             'site_tagline' => $this->site_tagline,

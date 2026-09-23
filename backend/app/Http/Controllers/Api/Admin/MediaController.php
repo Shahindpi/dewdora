@@ -3,25 +3,21 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-
+use App\Http\Requests\DeleteMediaRequest;
+use App\Http\Requests\ReplaceMediaRequest;
+use App\Http\Requests\UploadMediaRequest;
+use App\Http\Resources\Api\MediaResource;
+use App\Models\AffiliateProduct;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Post;
+use App\Models\SeoMeta;
+// Models
+use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-
-use App\Http\Requests\UploadMediaRequest;
-use App\Http\Requests\ReplaceMediaRequest;
-use App\Http\Requests\DeleteMediaRequest;
-
-use App\Http\Resources\Api\MediaResource;
-use App\Support\ApiResponse;
-
-// Models
-use App\Models\Post;
-use App\Models\Category;
-use App\Models\Brand;
-use App\Models\AffiliateProduct;
-use App\Models\SeoMeta;
 
 class MediaController extends Controller
 {
@@ -77,10 +73,7 @@ class MediaController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $perPage = min(
-            max((int) $request->input('per_page', 20), 1),
-            100
-        );
+        $perPage = $request->input('per_page') === 'all' ? max(1, $files->count()) : min(max($request->integer('per_page', 20), 1), 100);
 
         $page = max((int) $request->input('page', 1), 1);
 
@@ -119,7 +112,7 @@ class MediaController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
 
         /*
         |--------------------------------------------------------------------------
@@ -207,7 +200,7 @@ class MediaController extends Controller
         $file = $request->file('image');
 
         $filename =
-            Str::uuid() . '.' . $file->getClientOriginalExtension();
+            Str::uuid().'.'.$file->getClientOriginalExtension();
 
         $path = $file->storeAs(
             'uploads/images',
@@ -232,8 +225,7 @@ class MediaController extends Controller
 
             'name' => $filename,
 
-            'original_name' =>
-                $file->getClientOriginalName(),
+            'original_name' => $file->getClientOriginalName(),
 
             'path' => $path,
 
@@ -241,20 +233,17 @@ class MediaController extends Controller
 
             'mime_type' => $file->getMimeType(),
 
-            'extension' =>
-                $file->getClientOriginalExtension(),
+            'extension' => $file->getClientOriginalExtension(),
 
             'size' => $size,
 
-            'size_human' =>
-                $this->formatBytes($size),
+            'size_human' => $this->formatBytes($size),
 
             'width' => $width,
 
             'height' => $height,
 
-            'uploaded_at' =>
-                now()->toIso8601String(),
+            'uploaded_at' => now()->toIso8601String(),
 
         ], 'Image replaced successfully.');
     }
@@ -304,7 +293,7 @@ class MediaController extends Controller
             ->orWhere('twitter_image', $path)
             ->get()
             ->each(fn () => $usedBy->push(
-                "SEO Meta"
+                'SEO Meta'
             ));
 
         /*
@@ -317,10 +306,10 @@ class MediaController extends Controller
 
             return ApiResponse::error(
                 "Image is currently used by {$usedBy->count()} resources.",
-                422,
                 [
                     'used_by' => $usedBy->values(),
-                ]
+                ],
+                422
             );
         }
 
@@ -330,7 +319,7 @@ class MediaController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        if (!Storage::disk('public')->exists($path)) {
+        if (! Storage::disk('public')->exists($path)) {
 
             return ApiResponse::error(
                 'Image not found.',
@@ -352,13 +341,13 @@ class MediaController extends Controller
     private function formatBytes(int $bytes): string
     {
         if ($bytes >= 1048576) {
-            return round($bytes / 1048576, 2) . ' MB';
+            return round($bytes / 1048576, 2).' MB';
         }
 
         if ($bytes >= 1024) {
-            return round($bytes / 1024, 2) . ' KB';
+            return round($bytes / 1024, 2).' KB';
         }
 
-        return $bytes . ' Bytes';
+        return $bytes.' Bytes';
     }
 }

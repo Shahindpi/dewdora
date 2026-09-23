@@ -4,6 +4,8 @@ namespace App\Http\Resources\Api;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Support\ImageUrl;
+use App\Support\ResolvedSeo;
 
 class PostResource extends JsonResource
 {
@@ -25,7 +27,8 @@ class PostResource extends JsonResource
 
             'content' => $this->content,
 
-            'featured_image' => $this->featured_image,
+            'featured_image' => ImageUrl::make($this->featured_image),
+            'featured_image_path' => $this->featured_image,
 
             'post_type' => $this->post_type,
 
@@ -38,6 +41,12 @@ class PostResource extends JsonResource
             'reading_time' => $this->reading_time,
 
             'allow_comments' => $this->allow_comments,
+            'created_at' => $this->created_at?->toISOString(),
+
+            'author' => $this->whenLoaded('user', fn () => $this->user ? [
+                'id' => $this->user->id,
+                'name' => $this->user->name,
+            ] : null),
 
             /*
             |--------------------------------------------------------------------------
@@ -58,9 +67,7 @@ class PostResource extends JsonResource
                     $this->whenLoaded('affiliateProducts')
                 ),
 
-            'seo' => SeoMetaResource::make(
-                $this->whenLoaded('seoMeta')
-            ),
+            'seo' => ResolvedSeo::post($this->resource),
         ];
     }
 }

@@ -1,0 +1,164 @@
+name: Dewdora checks
+on:
+  push:
+    branches: [chatgpt/complete-dewdora]
+  pull_request:
+jobs:
+  mysql-seed:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: dewdora_gpt
+          MYSQL_USER: dewdora
+          MYSQL_PASSWORD: demo_test_password
+          MYSQL_ROOT_PASSWORD: demo_root_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s --health-timeout=5s --health-retries=8
+    env:
+      APP_ENV: local
+      APP_URL: http://127.0.0.1:8000
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: dewdora_gpt
+      DB_USERNAME: dewdora
+      DB_PASSWORD: demo_test_password
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_mysql, fileinfo, gd
+          coverage: none
+      - run: cd backend && composer install --no-interaction --prefer-dist && cp .env.example .env && php artisan key:generate
+      - name: Fresh MySQL installation and administrator verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd backend
+          php artisan migrate:fresh --seed --force
+          php artisan storage:link
+          php artisan serve --host=127.0.0.1 --port=8000 > /tmp/dewdora-mysql-php.log 2>&1 & php_pid=$!
+          trap 'kill "$php_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do if curl -fsS http://127.0.0.1:8000/api/v1/public/homepage > /dev/null; then break; fi; sleep 1; done
+          python3 scripts/verify-demo-install.py
+          php artisan db:seed --force
+          python3 scripts/verify-demo-install.py
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mysql-seed-failure
+          path: /tmp/dewdora-mysql-php.log
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, sqlite3, pdo_sqlite, fileinfo
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      - run: cp .env.example .env && php artisan key:generate
+      - run: php artisan route:list --path=api/v1
+      - run: php artisan test
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+          CACHE_STORE: array
+          SESSION_DRIVER: array
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint && npm run typecheck && npm run build
+  runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, sqlite3, pdo_sqlite, fileinfo, gd
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: cd backend && composer install --no-interaction --prefer-dist && cp .env.example .env && php artisan key:generate
+      - run: cd frontend && npm ci && npx playwright install --with-deps chromium
+      - name: Run Laravel and Next production browser acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DB_CONNECTION=sqlite DB_DATABASE="$PWD/backend/database/acceptance.sqlite" CACHE_STORE=array SESSION_DRIVER=array APP_URL=http://127.0.0.1:8000
+          touch "$DB_DATABASE"
+          mkdir -p backend/storage/app/public/uploads/images
+          cp frontend/public/dewdora-og.png backend/storage/app/public/uploads/images/test-product.png
+          cd backend
+          php artisan migrate:fresh --seed --force
+          php artisan db:seed --class=RuntimeAcceptanceSeeder --force
+          php artisan storage:link
+          php artisan serve --host=127.0.0.1 --port=8000 > /tmp/dewdora-php.log 2>&1 & php_pid=$!
+          cd ../frontend
+          export NEXT_PUBLIC_GA_ID=G-TEST12345 NEXT_PUBLIC_SITE_URL=http://127.0.0.1:3000 NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api/v1 API_URL=http://127.0.0.1:8000/api/v1 NEXT_PUBLIC_STORAGE_URL=http://127.0.0.1:8000/storage
+          npm run build
+          npm run start -- -p 3000 -H 127.0.0.1 > /tmp/dewdora-next.log 2>&1 & next_pid=$!
+          trap 'kill "$php_pid" "$next_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do if curl -fsS http://127.0.0.1:3000/products > /dev/null; then break; fi; sleep 1; done
+          PERF_API_URL=http://127.0.0.1:8000/api/v1 PERF_ADMIN_EMAIL=runtime@example.test PERF_ADMIN_PASSWORD='RuntimeTest!2026' PERF_API_OUTPUT=test-results/api-performance.json python3 ../backend/scripts/benchmark-public-api.py
+          PERF_BASE_URL=http://127.0.0.1:3000 PERF_ADMIN_EMAIL=runtime@example.test PERF_ADMIN_PASSWORD='RuntimeTest!2026' npm run performance
+          E2E_ADMIN_EMAIL=runtime@example.test E2E_ADMIN_PASSWORD='RuntimeTest!2026' npm test
+          kill "$next_pid"
+          wait "$next_pid" 2>/dev/null || true
+          export NEXT_PUBLIC_GA_ID=
+          npm run build
+          npm run start -- -p 3001 -H 127.0.0.1 > /tmp/dewdora-next-no-ga.log 2>&1 & next_pid=$!
+          for attempt in {1..30}; do if curl -fsS http://127.0.0.1:3001/ > /dev/null; then break; fi; sleep 1; done
+          node scripts/check-no-ga.mjs
+          curl -fsS http://127.0.0.1:3001/products | grep -o '<meta[^>]*>' | grep 'og:title'
+          curl -fsS http://127.0.0.1:3001/products/test-product-8 | grep -o '<meta[^>]*>' | grep 'og:image'
+          curl -fsS http://127.0.0.1:3001/posts/test-review | grep -o '<meta[^>]*>' | grep 'og:type'
+          kill "$next_pid"
+          wait "$next_pid" 2>/dev/null || true
+          python3 -c "from pathlib import Path; from shutil import rmtree; p=Path('.next'); rmtree(p) if p.is_dir() else None"
+          npm run dev -- -p 3002 -H 127.0.0.1 > /tmp/dewdora-next-dev.log 2>&1 & next_pid=$!
+          for attempt in {1..45}; do if curl -fsS http://127.0.0.1:3002/ > /dev/null; then break; fi; sleep 1; done
+          NO_GA_BASE_URL=http://127.0.0.1:3002 node scripts/check-no-ga.mjs
+          php -r '$db = new PDO("sqlite:../backend/database/acceptance.sqlite"); $db->exec("DROP TABLE affiliate_events");'
+          node scripts/check-api-outage.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-performance
+          path: |
+            frontend/test-results/performance.json
+            frontend/test-results/api-performance.json
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-failure
+          path: |
+            frontend/test-results/
+            /tmp/dewdora-php.log
+            /tmp/dewdora-next.log

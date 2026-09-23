@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\AdminPageSize;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -55,7 +56,7 @@ class ContactMessageController extends Controller
         $messages = $query
             ->latest()
             ->paginate(
-                min(max((int) $request->input('per_page', 15), 1), 100)
+                AdminPageSize::resolve($request, $query, 15)
             );
 
         return response()->json([

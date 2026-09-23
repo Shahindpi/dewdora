@@ -1,4 +1,5 @@
 "use client";
+import { routes } from "@/lib/routes";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -53,20 +54,20 @@ export default function PostRowActions({
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted">
+        <DropdownMenuTrigger aria-label={`Actions for ${title}`} className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted">
           <MoreHorizontal className="h-4 w-4" />
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="end">
           <DropdownMenuItem
-            onClick={() => router.push(`/admin/posts/${id}`)}
+            onClick={() => router.push(routes.admin.posts.edit(id))}
           >
             <Pencil className="h-4 w-4" />
             Edit
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            onClick={() => window.open(`/${slug}`, "_blank")}
+            onClick={() => window.open(`/posts/${slug}`, "_blank", "noopener,noreferrer")}
           >
             <Eye className="h-4 w-4" />
             View Live

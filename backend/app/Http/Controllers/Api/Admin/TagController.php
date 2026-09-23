@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\AdminPageSize;
 use App\Models\Tag;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,12 +35,7 @@ class TagController extends Controller
             $query->where('name', 'like', "%{$search}%");
         }
 
-        $tags = $query->paginate(
-            min(
-                max((int) $request->input('per_page', 20), 1),
-                100
-            )
-        );
+        $tags = $query->paginate(AdminPageSize::resolve($request, $query, 20));
 
         return ApiResponse::paginated(
             TagResource::collection($tags),
@@ -72,6 +68,7 @@ class TagController extends Controller
         */
 
         $tag = Tag::create($validated);
+        CacheService::clearPublicCaches();
 
 
         return ApiResponse::success(
@@ -157,6 +154,7 @@ class TagController extends Controller
 
         CacheService::clearTag($oldSlug);
         CacheService::clearTag($tag->slug);
+        CacheService::clearPublicCaches();
 
         return ApiResponse::success(
             new TagResource(
@@ -173,7 +171,9 @@ class TagController extends Controller
     public function destroy(Tag $tag): JsonResponse
     {
 
+        CacheService::clearTag($tag->slug);
         $tag->delete();
+        CacheService::clearPublicCaches();
 
 
         return response()->json([

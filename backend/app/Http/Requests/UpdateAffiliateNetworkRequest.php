@@ -44,6 +44,7 @@ class UpdateAffiliateNetworkRequest extends FormRequest
                 'nullable',
                 'string',
             ],
+            'status' => ['nullable', 'boolean'],
         ];
     }
 }

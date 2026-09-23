@@ -34,7 +34,7 @@ class UpdateSiteSettingRequest extends FormRequest
             'youtube' => 'nullable|url',
             'instagram' => 'nullable|url',
 
-            'google_analytics_id' => 'nullable|string|max:50',
+            'google_analytics_id' => ['nullable', 'regex:/^G-[A-Z0-9]+$/', 'max:50'],
             'google_search_console_id' => 'nullable|string|max:100',
 
         ];

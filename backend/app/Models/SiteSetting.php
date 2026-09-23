@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class SiteSetting extends Model
 {
     protected $fillable = [
+        'homepage_sections',
 
         'site_name',
         'site_tagline',
@@ -33,4 +34,9 @@ class SiteSetting extends Model
         'google_analytics_id',
         'google_search_console_id',
     ];
+
+    protected function casts(): array
+    {
+        return ['homepage_sections' => 'array'];
+    }
 }

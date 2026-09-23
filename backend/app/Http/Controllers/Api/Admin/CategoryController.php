@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\AdminPageSize;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,12 +33,7 @@ class CategoryController extends Controller
             $query->where('name', 'like', "%{$search}%");
         }
 
-        $categories = $query->paginate(
-            min(
-                max((int) $request->input('per_page', 20), 1),
-                100
-            )
-        );
+        $categories = $query->paginate(AdminPageSize::resolve($request, $query, 20));
 
         return ApiResponse::paginated(
             CategoryResource::collection($categories),
@@ -58,6 +54,8 @@ class CategoryController extends Controller
             ?? Str::slug($validated['name']);
 
         $category = Category::create($validated);
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
 
         return ApiResponse::success(
@@ -146,6 +144,8 @@ class CategoryController extends Controller
 
         // Clear current slug cache
         CacheService::clearCategory($category->slug);
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
         /*
         |--------------------------------------------------------------------------
@@ -170,10 +170,10 @@ class CategoryController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        if ($category->posts()->exists()) {
+        if ($category->posts()->exists() || $category->affiliateProducts()->exists() || $category->children()->exists()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot delete a category containing posts.',
+                'message' => 'Reassign posts, products and child categories before deleting this category.',
             ], 422);
         }
 
@@ -186,6 +186,8 @@ class CategoryController extends Controller
         CacheService::clearCategory($category->slug);
 
         $category->delete();
+        CacheService::clearPublicCaches();
+        CacheService::clearDashboardCaches();
 
 
         return response()->json([

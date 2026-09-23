@@ -22,3 +22,9 @@ export interface User {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface AdminRole extends Role {
+  description: string | null;
+  status: boolean;
+  users_count?: number;
+}
