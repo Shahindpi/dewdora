@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { routes } from "@/lib/routes";
 import { SiteShell } from "@/components/public/site-shell";
-import { PostCard, ProductCard } from "@/components/public/cards";
+import { ProductCard } from "@/components/public/cards";
+import { PostCard } from "@/components/public/post-card";
 import { safePublicGet, type PublicPost, type PublicProduct, type PublicCategory, type ListResult } from "@/lib/public-api";
 
 type Kind = "posts" | "products" | "categories" | "tags" | "brands";

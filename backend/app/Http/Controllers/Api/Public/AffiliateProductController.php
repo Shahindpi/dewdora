@@ -110,12 +110,12 @@ class AffiliateProductController extends Controller
      */
     public function show(string $slug): JsonResponse
     {
-        $product = Cache::remember(
-            CacheService::publicProductKey($slug),
-            now()->addHours(6),
+        $version = Cache::get('public_cache_version', 0);
+        $data = Cache::remember(
+            CacheService::publicProductKey($slug) . "_{$version}_detail",
+            now()->addMinutes(30),
             function () use ($slug) {
-
-                return AffiliateProduct::query()
+                $product = AffiliateProduct::query()
                     ->where('slug', $slug)
                     ->where('status', true)
                     ->with([
@@ -127,31 +127,28 @@ class AffiliateProductController extends Controller
                         },
                     ])
                     ->firstOrFail();
+
+                $relatedProducts = AffiliateProduct::query()
+                    ->where('status', true)
+                    ->whereKeyNot($product->id)
+                    ->when($product->category_id, fn ($query) => $query->where('category_id', $product->category_id))
+                    ->with(['brand', 'affiliateNetwork', 'category', 'seoMeta'])
+                    ->orderByDesc('featured')->orderByDesc('created_at')->orderByDesc('id')
+                    ->limit(4)->get();
+
+                $relatedPosts = $product->posts()->published()
+                    ->with(['category', 'tags', 'seoMeta'])
+                    ->latest('published_at')->limit(4)->get();
+
+                return compact('product', 'relatedProducts', 'relatedPosts');
             }
         );
 
-        $relatedProducts = AffiliateProduct::query()
-            ->where('status', true)
-            ->whereKeyNot($product->id)
-            ->when($product->category_id, fn ($query) => $query->where('category_id', $product->category_id))
-            ->with(['brand', 'affiliateNetwork', 'category', 'seoMeta'])
-            ->orderByDesc('featured')
-            ->latest()
-            ->limit(4)
-            ->get();
-
-        $relatedPosts = $product->posts()
-            ->published()
-            ->with(['category', 'tags', 'seoMeta'])
-            ->latest('published_at')
-            ->limit(4)
-            ->get();
-
         return ApiResponse::success(
             [
-                'product' => new AffiliateProductResource($product),
-                'related_products' => AffiliateProductResource::collection($relatedProducts),
-                'related_posts' => PostResource::collection($relatedPosts),
+                'product' => new AffiliateProductResource($data['product']),
+                'related_products' => AffiliateProductResource::collection($data['relatedProducts']),
+                'related_posts' => PostResource::collection($data['relatedPosts']),
             ],
             'Affiliate product retrieved successfully.'
         );

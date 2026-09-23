@@ -1,7 +1,8 @@
 import { routes } from "@/lib/routes";
 import { SiteShell } from "@/components/public/site-shell";
 import Link from "next/link";
-import { PostCard, ProductCard } from "@/components/public/cards";
+import { ProductCard } from "@/components/public/cards";
+import { PostCard } from "@/components/public/post-card";
 import {
   safePublicGet,
   type PublicPost,

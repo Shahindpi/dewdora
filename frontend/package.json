@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node scripts/acceptance.mjs",
+    "performance": "node scripts/performance-baseline.mjs",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {

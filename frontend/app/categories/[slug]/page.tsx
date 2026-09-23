@@ -4,7 +4,8 @@ import { pageMetadata, JsonLd, breadcrumbs } from "@/lib/seo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteShell } from "@/components/public/site-shell";
-import { PostCard, ProductCard } from "@/components/public/cards";
+import { ProductCard } from "@/components/public/cards";
+import { PostCard } from "@/components/public/post-card";
 import { PublicApiError, publicGet, type PublicPost, type PublicProduct, type PublicCategory, type ListResult } from "@/lib/public-api";
 import type { ApiResponse } from "@/types/api";
 

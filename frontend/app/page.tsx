@@ -8,7 +8,8 @@ import { NewsletterForm } from "@/components/public/forms";
 import { SiteShell } from "@/components/public/site-shell";
 import { RetryHomepage } from "@/components/public/retry-homepage";
 import { unstable_rethrow } from "next/navigation";
-import { PostCard, ProductCard } from "@/components/public/cards";
+import { ProductCard } from "@/components/public/cards";
+import { PostCard } from "@/components/public/post-card";
 import { safePublicGet, PublicApiError, type PublicPost, type PublicProduct, type PublicCategory } from "@/lib/public-api";
 import type { ApiResponse } from "@/types/api";
 

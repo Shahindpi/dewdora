@@ -109,7 +109,11 @@ class CategoryController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $posts = $category
+        $version = Cache::get('public_cache_version', 0);
+        $page = max($request->integer('page', 1), 1);
+        $productPage = max($request->integer('product_page', 1), 1);
+
+        $posts = Cache::remember("public_category_{$slug}_posts_{$version}_{$page}_{$perPage}", now()->addMinutes(15), fn () => $category
             ->posts()
             ->with([
                 'category',
@@ -124,16 +128,16 @@ class CategoryController extends Controller
                 now()
             )
             ->latest('published_at')
-            ->paginate($perPage);
+            ->paginate($perPage, ['*'], 'page', $page));
 
-        $products = $category->affiliateProducts()
+        $products = Cache::remember("public_category_{$slug}_products_{$version}_{$productPage}_{$perPage}", now()->addMinutes(15), fn () => $category->affiliateProducts()
             ->where('status', true)
             ->with(['brand', 'affiliateNetwork', 'category', 'seoMeta'])
             ->orderByDesc('featured')
             ->latest()
-            ->paginate($perPage, ['*'], 'product_page');
+            ->paginate($perPage, ['*'], 'product_page', $productPage));
 
-        $brands = \App\Models\Brand::query()
+        $brands = Cache::remember("public_category_{$slug}_brands_{$version}", now()->addMinutes(30), fn () => \App\Models\Brand::query()
             ->where('status', true)
             ->whereHas('affiliateProducts', fn ($query) => $query
                 ->where('category_id', $category->id)
@@ -143,7 +147,7 @@ class CategoryController extends Controller
                 ->where('status', true)])
             ->orderByDesc('affiliate_products_count')
             ->limit(8)
-            ->get();
+            ->get());
 
 
         /*

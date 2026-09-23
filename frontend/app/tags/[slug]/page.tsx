@@ -3,7 +3,7 @@ import { pageMetadata, JsonLd, breadcrumbs } from "@/lib/seo";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { SiteShell } from "@/components/public/site-shell";
-import { PostCard } from "@/components/public/cards";
+import { PostCard } from "@/components/public/post-card";
 import { PublicApiError, publicGet, type PublicPost, type ListResult } from "@/lib/public-api";
 import type { ApiResponse } from "@/types/api";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {

@@ -11,6 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,7 +28,10 @@ import { createPost, updatePost } from "@/services/posts";
 import PostSlugInput from "./post-slug-input";
 import PostEditorSidebar from "./post-editor-sidebar";
 
-import RichTextEditor from "@/components/admin/editor/rich-text-editor";
+const RichTextEditor = dynamic(() => import("@/components/admin/editor/rich-text-editor"), {
+  ssr: false,
+  loading: () => <div className="min-h-64 animate-pulse rounded-2xl bg-muted" aria-label="Loading editor" />,
+});
 
 interface Props {
   mode: "create" | "edit";

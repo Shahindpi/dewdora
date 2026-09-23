@@ -126,6 +126,8 @@ jobs:
           npm run start -- -p 3000 -H 127.0.0.1 > /tmp/dewdora-next.log 2>&1 & next_pid=$!
           trap 'kill "$php_pid" "$next_pid" 2>/dev/null || true' EXIT
           for attempt in {1..30}; do if curl -fsS http://127.0.0.1:3000/products > /dev/null; then break; fi; sleep 1; done
+          PERF_API_URL=http://127.0.0.1:8000/api/v1 PERF_ADMIN_EMAIL=runtime@example.test PERF_ADMIN_PASSWORD='RuntimeTest!2026' PERF_API_OUTPUT=test-results/api-performance.json python3 ../backend/scripts/benchmark-public-api.py
+          PERF_BASE_URL=http://127.0.0.1:3000 PERF_ADMIN_EMAIL=runtime@example.test PERF_ADMIN_PASSWORD='RuntimeTest!2026' npm run performance
           E2E_ADMIN_EMAIL=runtime@example.test E2E_ADMIN_PASSWORD='RuntimeTest!2026' npm test
           kill "$next_pid"
           wait "$next_pid" 2>/dev/null || true
@@ -145,6 +147,13 @@ jobs:
           NO_GA_BASE_URL=http://127.0.0.1:3002 node scripts/check-no-ga.mjs
           php -r '$db = new PDO("sqlite:../backend/database/acceptance.sqlite"); $db->exec("DROP TABLE affiliate_events");'
           node scripts/check-api-outage.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-performance
+          path: |
+            frontend/test-results/performance.json
+            frontend/test-results/api-performance.json
       - if: failure()
         uses: actions/upload-artifact@v4
         with:

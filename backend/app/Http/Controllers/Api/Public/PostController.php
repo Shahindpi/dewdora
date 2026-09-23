@@ -287,7 +287,8 @@ class PostController extends Controller
             ->pluck('id')
             ->all();
 
-        $relatedPosts = Post::query()
+        $version = Cache::get('public_cache_version', 0);
+        $relatedPosts = Cache::remember("public_post_{$slug}_related_{$version}", now()->addMinutes(15), fn () => Post::query()
 
             ->select([
                 'id',
@@ -329,7 +330,7 @@ class PostController extends Controller
 
             ->limit(6)
 
-            ->get();
+            ->get());
 
         /*
         |--------------------------------------------------------------------------

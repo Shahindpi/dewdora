@@ -4,6 +4,8 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   images: {
     dangerouslyAllowLocalIP: true,
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 86400,
     remotePatterns: [
       {
         protocol: "http",

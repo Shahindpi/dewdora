@@ -3,11 +3,15 @@ import { routes } from "@/lib/routes";
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import { toast } from "sonner";
 import MediaPickerModal from "@/components/admin/media/media-picker-modal";
-import RichTextEditor from "@/components/admin/editor/rich-text-editor";
+const RichTextEditor = dynamic(() => import("@/components/admin/editor/rich-text-editor"), {
+  ssr: false,
+  loading: () => <div className="min-h-64 animate-pulse rounded-2xl bg-muted" aria-label="Loading editor" />,
+});
 import { apiErrorMessage } from "@/lib/api-error";
 import { imageUrl } from "@/lib/image";
 import {
